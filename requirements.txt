@@ -1,0 +1,2 @@
+# Không có dependency pip bắt buộc.
+# Tkinter thuộc bộ cài Python tiêu chuẩn; ffmpeg là chương trình hệ thống riêng.

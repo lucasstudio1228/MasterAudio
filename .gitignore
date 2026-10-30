@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Audio đầu vào/đầu ra và file tạm
+output/
+da_chinh_tempo/
+mastered/
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.aac
+*.ogg
+*.wma
+*.aiff
+*.aif
+*.tmp
+*.part
+
+# ffmpeg binary rất lớn — người dùng tự cài theo README
+ffmpeg/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
