@@ -10,7 +10,7 @@ Gồm 4 bước, giữ nguyên mọi setting đang dùng:
 
 Không có phần dựng video và đăng YouTube.
 
-## Cài đặt (chỉ làm 1 lần)
+## Cài đặt trên Windows (chỉ làm 1 lần)
 
 Máy cần có sẵn:
 - **Python 3.11** (khi cài nhớ tick "Add Python to PATH") — https://www.python.org/downloads/
@@ -19,9 +19,30 @@ Máy cần có sẵn:
 
 Sau đó bấm đúp **`install.bat`** và chờ cài xong (lần đầu có thể mất 10–20 phút).
 
+## Cài đặt trên Mac (macOS)
+
+1. Mở ứng dụng **Terminal** (Cmd + Space → gõ "Terminal").
+2. Cài **Homebrew** nếu chưa có (dán lệnh ở https://brew.sh vào Terminal, Enter).
+3. Dán lệnh sau vào Terminal rồi Enter:
+   ```bash
+   brew install python@3.11 ffmpeg
+   ```
+4. Cài **Google Chrome** (dùng để mở Suno; không có Chrome thì tool tự dùng Chromium).
+5. Trong thư mục tool, bấm đúp **`install_mac.command`** và chờ cài xong.
+   - Nếu Mac báo *"không thể mở vì từ nhà phát triển không xác định"*: **chuột phải** vào file →
+     **Open (Mở)** → **Open** lần nữa. Chỉ cần làm 1 lần cho mỗi file.
+   - Nếu báo *"không có quyền"*: mở Terminal, gõ `chmod +x ` (có dấu cách), kéo thả thư mục
+     tool vào, xoá dấu `/` cuối rồi thêm `/*.command`, Enter. Ví dụ:
+     ```bash
+     chmod +x ~/Downloads/MasterAudio-main/*.command
+     ```
+6. Hằng ngày: bấm đúp **`start_mac.command`** → trình duyệt tự mở **http://localhost:8200**.
+
+Mac chip M1/M2/M3 chạy được nhưng tách giọng (Demucs) sẽ chậm hơn máy Windows có card NVIDIA.
+
 ## Sử dụng hằng ngày
 
-1. Bấm đúp **`start.bat`**. Trình duyệt tự mở **http://localhost:8200**.
+1. Bấm đúp **`start.bat`** (Mac: **`start_mac.command`**). Trình duyệt tự mở **http://localhost:8200**.
 2. Lần đầu: bấm **⚙ Settings** →
    - **Đăng nhập Suno** và **nhaccuatui** (mỗi người tự đăng nhập tài khoản của mình).
    - Dán **API Key** của mình nếu dùng AI (địa chỉ API và model đã điền sẵn).

@@ -11,6 +11,7 @@ import re
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 import shutil
+import sys
 
 # ── Thư mục ─────────────────────────────────────────────────────
 _ROOT       = Path(__file__).parent.parent.parent          # meditation_mixer/
@@ -984,6 +985,11 @@ SITE_BROWSER: dict[str, str] = {
     # profile persistent riêng của tool nên không đụng profile Chrome cá nhân.
     "suno": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
 }
+
+# macOS (2026-11-10): Chrome nằm trong /Applications. Không có Chrome thì tự
+# dùng Chromium bundled của Playwright (resolve_browser_exe trả None).
+if sys.platform == "darwin":
+    SITE_BROWSER["suno"] = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 
 def resolve_browser_exe(site: str | None = None) -> str | None:
