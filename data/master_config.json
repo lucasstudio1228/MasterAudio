@@ -1,0 +1,56 @@
+{
+  "enabled": true,
+  "ffmpeg_path": "ffmpeg",
+  "preset": "natural",
+  "output_format": "wav",
+  "max_parallel": 2,
+  "stable_seconds": 2,
+  "wait_ready_timeout_sec": 120,
+  "highpass_hz": 30,
+  "eq_mud": {
+    "freq_hz": 300,
+    "width_q": 1.0,
+    "gain_db": -1.5
+  },
+  "eq_harsh": {
+    "freq_hz": 3500,
+    "width_q": 1.5,
+    "gain_db": -1.5
+  },
+  "high_shelf": {
+    "freq_hz": 10000,
+    "gain_db": -1.5
+  },
+  "mono_bass": {
+    "enabled": true,
+    "split_hz": 120
+  },
+  "compressor": {
+    "threshold_db": -18,
+    "attack_ms": 20,
+    "release_ms": 200
+  },
+  "loudnorm": {
+    "true_peak_db": -1.0,
+    "lra": 11
+  },
+  "true_peak_margin_db": 0.3,
+  "mp3_true_peak_margin_db": 0.3,
+  "presets": {
+    "natural": {
+      "lufs": -14,
+      "ratio": 2,
+      "note": "Cân bằng, chuẩn YouTube"
+    },
+    "dynamic": {
+      "lufs": -16,
+      "ratio": 1.5,
+      "note": "Giữ dynamic, ít nén"
+    },
+    "loud": {
+      "lufs": -10,
+      "ratio": 3,
+      "note": "To hơn, TP vẫn -1"
+    }
+  }
+}

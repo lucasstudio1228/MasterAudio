@@ -1,2 +1,30 @@
-# Không có dependency pip bắt buộc.
-# Tkinter thuộc bộ cài Python tiêu chuẩn; ffmpeg là chương trình hệ thống riêng.
+soundfile>=0.12.0
+librosa>=0.10.0
+numpy>=1.24.0
+scipy>=1.11.0
+resampy>=0.4.2
+demucs>=4.0.0
+pyloudnorm>=0.1.1
+# Chấm "đúng nhạc cụ chính" cho bài Suno (video/instrument_qc.py). Trọng số
+#   Cnn14_mAP=0.431.pth (zenodo.org/record/3987831) đặt vào ~/panns_data/
+panns_inference>=0.1.1
+noisereduce>=0.1.0
+# torch: CUDA build cần cài riêng:
+#   pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+openai>=1.40.0
+click>=8.1.0
+tqdm>=4.65.0
+rich>=13.0.0
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+sqlmodel>=0.0.18
+python-multipart>=0.0.9
+aiofiles>=23.0.0
+requests>=2.31.0
+yt-dlp>=2025.10.0
+cryptography>=42.0.0
+Pillow>=10.0.0
+# Phần Video: tự động hoá ChatGPT/Flow bằng trình duyệt.
+#   Sau khi pip install, chạy 1 lần:  playwright install chromium
+#   (hoặc dùng Chrome sẵn có — config.BrowserConfig.chrome_channel="chrome")
+playwright>=1.44.0

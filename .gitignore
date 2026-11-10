@@ -1,31 +1,56 @@
+# Python
 __pycache__/
-*.py[cod]
-.pytest_cache/
+*.pyc
+.env
 .venv/
 venv/
+.browser_profile/
+.browser_profile_suno/
+.browser_profile_*/
+.runtime_packages/
+.runtime_packages311/
 
-# Audio đầu vào/đầu ra và file tạm
-output/
-da_chinh_tempo/
-mastered/
-*.wav
-*.mp3
-*.m4a
-*.flac
-*.aac
-*.ogg
-*.wma
-*.aiff
-*.aif
-*.tmp
-*.part
+# App data & output (nguoi dung tu sinh - KHONG day len repo)
+data/*
+!data/master_config.json
+!data/suno_workflow.json
+outputs/
+stems/
+Projects/
+media/
+*.db
+*.sqlite
+*.sqlite3
 
-# ffmpeg binary rất lớn — người dùng tự cài theo README
-ffmpeg/
+# File test / tam
+*_denoised_test.wav
+*_test.wav
 
-# IDE / OS
-.vscode/
-.idea/
+# Frontend deps (giu lai frontend/dist de khoi can Node khi chay)
+frontend/node_modules/
+
+# Build artifacts cua launcher .exe
+build/
+*.spec
+
+# OS
 .DS_Store
 Thumbs.db
-desktop.ini
+
+# TS build cache
+*.tsbuildinfo
+
+# Ho so trinh duyet / phien dang nhap (TUYET DOI khong day len)
+.browser_profile*/
+*.cookies
+storage_state*.json
+
+# Log + file rac
+*.log
+/0.05
+
+# Script do live trinh duyet (chi dung khi phat trien)
+tests/_probe_*.py
+tests/_run_*.py
+# Thùng rác project (giữ 7 ngày trước khi xoá vĩnh viễn)
+Trash/
