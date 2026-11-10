@@ -28,3 +28,5 @@ Pillow>=10.0.0
 #   Sau khi pip install, chạy 1 lần:  playwright install chromium
 #   (hoặc dùng Chrome sẵn có — config.BrowserConfig.chrome_channel="chrome")
 playwright>=1.44.0
+# AI nghe lời (bước ③ căn lời) — dùng openai-whisper bên trong.
+stable-ts>=2.19.0

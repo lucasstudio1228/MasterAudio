@@ -1,0 +1,16 @@
+# Giới hạn phiên bản cho Mac chip Intel (x86_64) — dùng bởi install_mac.command.
+# PyTorch ngừng phát hành bản Mac Intel sau 2.2.2 → các thư viện liên quan phải
+# dùng bản tương thích (numpy 1.x). Bản mới hơn các gói dưới không có bản cài sẵn
+# cho Mac Intel + Python 3.11 (sẽ phải tự biên dịch → dễ lỗi).
+torch==2.2.2
+torchaudio==2.2.2
+numpy==1.26.4
+numba==0.62.1
+llvmlite==0.45.1
+librosa==0.11.0
+cryptography==48.0.1
+contourpy==1.3.3
+# demucs 4.1.0 đòi sphn>=0.1.12 (chỉ có bản cho chip M) → cài sphn 0.1.4 +
+# demucs --no-deps; demucs tự chuyển sang đọc bằng ffmpeg nếu sphn không đọc được.
+sphn==0.1.4
+demucs==4.1.0

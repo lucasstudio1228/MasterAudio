@@ -19,7 +19,15 @@ Máy cần có sẵn:
 
 Sau đó bấm đúp **`install.bat`** và chờ cài xong (lần đầu có thể mất 10–20 phút).
 
-## Cài đặt trên Mac (macOS)
+## Cài đặt trên Mac (macOS) — dùng chung cho chip M và chip Intel
+
+**Xem máy mình chip gì:** bấm **logo quả táo** (góc trên bên trái màn hình) → **Giới thiệu về máy Mac này
+(About This Mac)**:
+- Ghi **"Chip: Apple M1/M2/M3/M4…"** → Mac chip M.
+- Ghi **"Bộ xử lý (Processor): … Intel Core i5/i7/i9…"** → Mac chip Intel (xem thêm mục
+  *Mac chip Intel* bên dưới).
+
+Không cần chọn gì: **`install_mac.command` tự nhận ra loại chip** và cài đúng bộ thư viện.
 
 1. Mở ứng dụng **Terminal** (Cmd + Space → gõ "Terminal").
 2. Cài **Homebrew** nếu chưa có (dán lệnh ở https://brew.sh vào Terminal, Enter).
@@ -39,6 +47,39 @@ Sau đó bấm đúp **`install.bat`** và chờ cài xong (lần đầu có th�
 6. Hằng ngày: bấm đúp **`start_mac.command`** → trình duyệt tự mở **http://localhost:8200**.
 
 Mac chip M1/M2/M3 chạy được nhưng tách giọng (Demucs) sẽ chậm hơn máy Windows có card NVIDIA.
+
+### Mac chip Intel
+
+- **Yêu cầu:** macOS 12 (Monterey) trở lên, RAM từ 8 GB (khuyên 16 GB), trống ổ đĩa ~10 GB.
+- Cài giống hệt các bước trên. Khi chạy `install_mac.command`, cửa sổ sẽ ghi
+  *"May Mac chip INTEL (x86_64)"* — tool tự dùng **PyTorch 2.2.2** (bản cuối cùng còn hỗ trợ
+  Mac Intel) và các thư viện tương thích trong file `constraints-mac-intel.txt`.
+  Lần cài đầu có thể mất **10–20 phút**.
+- Cài xong, cửa sổ phải hiện dòng **`OK: torch 2.2.2 - numpy 1.26.4`**. Nếu thấy
+  *[CANH BAO]* / *[LOI]* thì chụp màn hình gửi người hỗ trợ.
+- **Tốc độ:** Mac Intel chỉ chạy AI bằng CPU nên bước **③ Lời bài hát** (AI nghe lời) và tách
+  giọng **chậm hơn nhiều** (có thể vài phút mỗi bài). ① Tải nhạc, ② Suno Cover, ④ Mix chạy bình
+  thường. Nên cắm sạc và để máy không ngủ khi đang chạy.
+- **macOS cũ (Homebrew báo không hỗ trợ):**
+  - Python: tải bản **Python 3.11 "macOS 64-bit universal2 installer"** ở
+    https://www.python.org/downloads/macos/ rồi cài như phần mềm bình thường.
+  - ffmpeg: tải file **ffmpeg** ở https://evermeet.cx/ffmpeg/ , giải nén, rồi mở Terminal gõ
+    (kéo thả file ffmpeg vào chỗ đường dẫn):
+    ```bash
+    sudo mkdir -p /usr/local/bin && sudo cp ~/Downloads/ffmpeg /usr/local/bin/ && sudo chmod +x /usr/local/bin/ffmpeg
+    ```
+    (Lệnh `sudo` sẽ hỏi mật khẩu máy Mac — người dùng tự gõ.)
+  - Sau đó bấm đúp `install_mac.command` như bình thường.
+
+### Lỗi thường gặp trên Mac
+
+| Hiện tượng | Cách xử lý |
+|---|---|
+| Bấm đúp file `.command` mở ra trình soạn thảo chữ | Chuột phải → **Open With (Mở bằng)** → **Terminal** |
+| "Không tìm thấy Python 3.11" | Cài lại Python 3.11 (Homebrew hoặc python.org), đóng Terminal, chạy lại |
+| "Không tìm thấy ffmpeg" | `brew install ffmpeg` (hoặc cách thủ công ở trên) |
+| Trình duyệt không tự mở | Tự mở Chrome/Safari, vào http://localhost:8200 |
+| Muốn cài lại từ đầu | Xoá thư mục ẩn `.venv` trong thư mục tool (Cmd + Shift + . để hiện file ẩn), chạy lại `install_mac.command` |
 
 ## Sử dụng hằng ngày
 

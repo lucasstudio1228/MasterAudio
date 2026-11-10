@@ -48,11 +48,40 @@ VPY=".venv/bin/python"
 echo "[2/5] Nang cap pip..."
 "$VPY" -m pip install --upgrade pip
 
-echo "[3/5] Cai PyTorch (ban cho Mac)..."
-"$VPY" -m pip install torch==2.5.1 || { echo "[LOI] Cai torch that bai."; pause_exit 1; }
+ARCH=$("$VPY" -c 'import platform; print(platform.machine())')
+if [ "$ARCH" = "x86_64" ]; then
+    # ---------- Mac chip INTEL ----------
+    echo "      May Mac chip INTEL (x86_64) -> dung bo thu vien tuong thich."
+    C="constraints-mac-intel.txt"
+    echo "[3/5] Cai PyTorch 2.2.2 (ban cuoi cung ho tro Mac Intel)..."
+    "$VPY" -m pip install --prefer-binary -c "$C" torch torchaudio numpy \
+        || { echo "[LOI] Cai torch that bai."; pause_exit 1; }
 
-echo "[4/5] Cai cac thu vien con lai (co the mat vai phut)..."
-"$VPY" -m pip install -r requirements.txt || { echo "[LOI] Cai dependencies that bai."; pause_exit 1; }
+    echo "[4/5] Cai cac thu vien con lai (co the mat 10-20 phut)..."
+    grep -viE '^demucs' requirements.txt > .req-mac-intel.tmp
+    "$VPY" -m pip install --prefer-binary -c "$C" -r .req-mac-intel.tmp \
+        || { rm -f .req-mac-intel.tmp; echo "[LOI] Cai dependencies that bai."; pause_exit 1; }
+    rm -f .req-mac-intel.tmp
+    # demucs (tach giong): cai rieng, bo qua rang buoc sphn moi (khong co ban Intel).
+    "$VPY" -m pip install --prefer-binary --no-deps -c "$C" demucs sphn \
+        || { echo "[LOI] Cai demucs that bai."; pause_exit 1; }
+    "$VPY" -m pip install --prefer-binary -c "$C" einops huggingface-hub "julius>=0.2.3" \
+        "lameenc>=1.2" pyyaml safetensors tqdm \
+        || { echo "[LOI] Cai thu vien cho demucs that bai."; pause_exit 1; }
+else
+    # ---------- Mac chip M (Apple Silicon) ----------
+    echo "      May Mac chip M (Apple Silicon)."
+    echo "[3/5] Cai PyTorch (ban cho Mac)..."
+    "$VPY" -m pip install torch==2.5.1 torchaudio==2.5.1 \
+        || { echo "[LOI] Cai torch that bai."; pause_exit 1; }
+
+    echo "[4/5] Cai cac thu vien con lai (co the mat vai phut)..."
+    "$VPY" -m pip install -r requirements.txt || { echo "[LOI] Cai dependencies that bai."; pause_exit 1; }
+fi
+
+echo "      Kiem tra thu vien chinh..."
+"$VPY" -c "import torch, numpy, librosa, demucs.api, stable_whisper, fastapi; print('      OK: torch', torch.__version__, '- numpy', numpy.__version__)" \
+    || echo "[CANH BAO] Co thu vien chua cai dung - chup man hinh cua so nay gui nguoi ho tro."
 
 echo "[5/5] Cai trinh duyet Chromium cho Playwright (tu dong hoa Suno)..."
 "$VPY" -m playwright install chromium || \

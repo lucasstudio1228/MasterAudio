@@ -40,10 +40,10 @@ call .venv\Scripts\python.exe -m pip install --upgrade pip
 
 echo [3/5] Cai PyTorch (CUDA 12.1 - can GPU NVIDIA)...
 echo       (Neu may KHONG co GPU NVIDIA, xoa " --index-url ..." de dung ban CPU - se cham hon)
-call .venv\Scripts\pip.exe install torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+call .venv\Scripts\pip.exe install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
 if errorlevel 1 (
     echo [CANH BAO] Cai torch CUDA that bai. Thu ban CPU...
-    call .venv\Scripts\pip.exe install torch==2.5.1
+    call .venv\Scripts\pip.exe install torch==2.5.1 torchaudio==2.5.1
 )
 
 echo [4/5] Cai cac thu vien con lai (co the mat vai phut)...
