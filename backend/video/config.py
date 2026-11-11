@@ -1963,7 +1963,8 @@ SUNO_SELECTORS: dict[str, list[str]] = {
     "new_workspace": ["*:has-text('Create new workspace')"],
     # Danh sách bài + hành động per-song.
     "song_row_play": ["div[role=button][aria-label^='Play ']"],
-    "song_more_options": ["button[aria-label='More options']"],
+    "song_more_options": ["button[aria-label='More options']",
+                          "button[aria-label^='More options for']"],
     # Menu ⋯ → Download → dialog format WAV.
     "download_entry": [
         "div.hxc-menu-item:has-text('Download')",

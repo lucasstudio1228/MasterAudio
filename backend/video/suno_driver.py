@@ -1478,10 +1478,17 @@ class SunoDriver:
         .forEach(e => e.removeAttribute('data-mm-song-more'));
       if (!id || !location.pathname.includes(id)) return false;
       let best = null, by = 1e9;
-      for (const b of document.querySelectorAll("button[aria-label='More options']")) {
+      // LIVE 2026-11-11: nút ⋯ đầu trang bài đổi aria-label thành
+      // 'More options for <tên bài>' → khớp cả tiền tố.
+      for (const b of document.querySelectorAll(
+          "button[aria-label='More options'],button[aria-label^='More options for']")) {
         if (b.offsetParent === null) continue;
+        // Nút có tên bài ('More options for …') chính là nút của bài đang
+        // xem — khối đầu trang mới chung tổ tiên với 'Similar songs' nên
+        // không dùng phép thử link /song/ của bài khác cho nút này.
+        const named = (b.getAttribute('aria-label') || '').startsWith('More options for ');
         let c = b, foreign = false;
-        for (let i = 0; i < 6 && c; i++) {
+        for (let i = 0; i < 6 && c && !named; i++) {
           const ls = c.querySelectorAll ? c.querySelectorAll("a[href*='/song/']") : [];
           if (ls.length) {
             foreign = [...ls].some(a => !(a.getAttribute('href') || '').includes(id));
@@ -1516,8 +1523,9 @@ class SunoDriver:
                 row = self.page.locator(f"a[href*='/song/{song_id}']").first
                 if row.count() > 0:
                     container = row.locator(
-                        "xpath=ancestor-or-self::*[.//button[@aria-label='More options']][1]")
-                    cand = container.locator("button[aria-label='More options']").first
+                        "xpath=ancestor-or-self::*[.//button[starts-with(@aria-label,"
+                        "'More options')]][1]")
+                    cand = container.locator("button[aria-label^='More options']").first
                     if cand.count() > 0:
                         more = cand
             except Exception:
@@ -1593,7 +1601,7 @@ class SunoDriver:
                 has_link = self.page.locator(
                     f"a[href*='/song/{song_id}']").count() > 0
                 has_more = self.page.locator(
-                    "button[aria-label='More options']").count() > 0
+                    "button[aria-label^='More options']").count() > 0
                 if has_link or has_more:
                     return
             except Exception as e:      # noqa: BLE001 — thử lại

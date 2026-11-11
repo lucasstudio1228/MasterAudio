@@ -349,7 +349,8 @@ _JS_MARK_UPLOAD_MORE = r"""(fileStem) => {
   // LIVE Suno changed UPLOAD from a leaf <span> to a badge containing an icon.
   // Work from each visible More button and climb to its compact song row, so
   // both DOM shapes are supported.
-  const sel = "button[aria-label='More options'],button[aria-label='More']";
+  // LIVE 2026-11-11: Suno thêm kiểu 'More options for <tên bài>'.
+  const sel = "button[aria-label='More options'],button[aria-label^='More options for'],button[aria-label='More']";
   const mores = [...document.querySelectorAll(sel)].filter(vis);
   for (const more of mores) {
     // Chỉ xét hàng RIÊNG của nút này: dừng trước tổ tiên chứa thêm nút ⋯ của
