@@ -1,7 +1,7 @@
 """Thư mục «nhac_mix» trong mỗi project: chứa ĐÚNG 1 file nhạc đã mix (2026-11-10).
 
 media/<nhóm>/<project>/nhac_mix/<tên project>.wav — bản mix mới nhất, không cần
-video. Dùng hardlink tới outputs/<pid>/<mix>/mix.wav (cùng ổ đĩa → không tốn thêm
+video (kèm <tên project>.srt = lời bài hát theo câu để chèn vào CapCut). Dùng hardlink tới outputs/<pid>/<mix>/mix.wav (cùng ổ đĩa → không tốn thêm
 dung lượng); khác ổ thì sao chép. Mix mới/vá mix sẽ thay file cũ.
 """
 from __future__ import annotations
@@ -38,9 +38,19 @@ def export_mix_audio(project_id: int, project_name: Optional[str],
         except OSError:
             shutil.copy2(src, tmp)
         tmp.replace(dest)
-        # Chỉ giữ 1 file nhạc trong thư mục.
+        # Lời bài hát .srt (cùng tên) để tự chèn vào CapCut — 2026-11-11.
+        srt = dest.with_suffix(".srt")
+        try:
+            from backend.cover.lyrics_export import srt_for_project, write_srt
+            content = srt_for_project(project_id, src)
+            if content.strip():
+                write_srt(srt, content)
+                print(f"[mix] Đã lưu lời bài hát cho CapCut: {srt}", flush=True)
+        except Exception as exc:   # noqa: BLE001 — không làm hỏng mix
+            print(f"[mix] Không xuất được file lời .srt: {exc}", flush=True)
+        # Chỉ giữ 1 file nhạc (+ file lời .srt cùng tên) trong thư mục.
         for old in folder.iterdir():
-            if old.is_file() and old != dest:
+            if old.is_file() and old not in (dest, srt):
                 try:
                     old.unlink()
                 except OSError:

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   songAudioUrl,
   songLrcUrl,
+  lyricsSrtUrl,
   useAlignAll,
   useAlignSong,
   useCoverSettings,
@@ -215,6 +216,10 @@ function SongList({ projectId, songs, selected, onSelect, alignMsg, busy }: {
                 if (window.confirm('Căn lại TẤT CẢ bài? Những chỗ bạn đã sửa tay sẽ bị ghi đè.'))
                   alignAll.mutate(false);
               }}>Căn lại tất cả</button>
+            <a className={btn} href={lyricsSrtUrl(projectId)}
+              title="File phụ đề chỉ có lời bài hát, chạy theo từng câu nhạc của bản Mix mới nhất — kéo thả vào CapCut">
+              ⬇ Lời cho CapCut (.srt)
+            </a>
           </div>
           {(busy || alignMsg) && (
             <p className={`text-xs ${busy ? 'text-blue-300' : 'text-gray-400'}`}>

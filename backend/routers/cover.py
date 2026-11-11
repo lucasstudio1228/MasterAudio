@@ -259,6 +259,41 @@ def export_lrc(song_id: int, session: Session = Depends(get_session)):
     return to_lrc(load_lines(song.lyrics_json), song.title, song.artist)
 
 
+@router.get("/projects/{project_id}/lyrics-srt")
+def export_lyrics_srt(project_id: int, mix_id: Optional[int] = None,
+                      session: Session = Depends(get_session)):
+    """Lời bài hát theo câu (.srt) cho CapCut — chỉ có lời, không tên bài/chữ khác.
+    Đồng thời lưu vào thư mục nhac_mix cạnh file nhạc mix."""
+    from urllib.parse import quote
+    from fastapi.responses import Response
+    from backend.cover.lyrics_export import srt_for_project, write_srt
+    from backend.cover.mix_export import MIX_AUDIO_DIR, _safe
+    project = get_project_or_404(session, project_id)
+    mix_wav = None
+    if mix_id is not None:
+        from backend.models import Mix
+        mix = session.get(Mix, mix_id)
+        if mix is None or mix.project_id != project_id or not mix.output_dir:
+            raise HTTPException(404, "Không tìm thấy bản Mix")
+        mix_wav = Path(mix.output_dir) / "mix.wav"
+    content = srt_for_project(project_id, mix_wav)
+    if not content.strip():
+        raise HTTPException(404, "Chưa có lời đã căn thời gian hoặc chưa có bản Mix "
+                                 "— hãy căn lời ở tab Lời bài hát và tạo Mix trước.")
+    fname = f"{_safe(project.name or f'project {project_id}')}.srt"
+    try:
+        from backend.video import config as vconfig
+        folder = vconfig.project_dir(project_id, project.name) / MIX_AUDIO_DIR
+        folder.mkdir(parents=True, exist_ok=True)
+        write_srt(folder / fname, content)
+    except Exception:
+        pass   # tải về vẫn được dù không ghi được thư mục
+    body = ("\ufeff" + content).replace("\n", "\r\n").encode("utf-8")
+    return Response(body, media_type="application/x-subrip", headers={
+        "Content-Disposition": f"attachment; filename=\"lyrics.srt\"; "
+                               f"filename*=UTF-8''{quote(fname)}"})
+
+
 @router.get("/songs/{song_id}/audio")
 def song_audio(song_id: int, session: Session = Depends(get_session)):
     """File gốc để nghe thử trong màn hình rà lời (trình duyệt tự tua)."""

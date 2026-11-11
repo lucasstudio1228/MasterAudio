@@ -1,4 +1,5 @@
 import { downloadUrl } from '../../api/client';
+import { lyricsSrtUrl } from '../../api/cover';
 import type { Mix } from '../../types';
 import StatusBadge from '../shared/StatusBadge';
 
@@ -76,6 +77,15 @@ export default function MixHistoryList({ mixes, onDelete }: Props) {
                   {d.label}
                 </a>
               ))}
+            {mix.status === 'completed' && (
+              <a
+                href={lyricsSrtUrl(mix.project_id, mix.id)}
+                title="Chỉ có lời bài hát, chạy theo từng câu nhạc — kéo thả vào CapCut"
+                className="rounded bg-surface-2 px-2 py-1 text-xs text-gray-200 hover:bg-white/10"
+              >
+                Lời .srt (CapCut)
+              </a>
+            )}
             {mix.status !== 'running' && mix.status !== 'pending' && (
               <button
                 onClick={() => onDelete(mix)}

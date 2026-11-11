@@ -67,6 +67,8 @@ const base = '/api/cover';
 // `v` = tempo bản cover → đổi tempo ở tab ② xong không phát lại bản cũ trình duyệt đã lưu tạm.
 export const songAudioUrl = (songId: number, v = '') =>
   `${API_BASE}${base}/songs/${songId}/audio${v ? `?v=${encodeURIComponent(v)}` : ''}`;
+export const lyricsSrtUrl = (projectId: number, mixId?: number) =>
+  `${API_BASE}${base}/projects/${projectId}/lyrics-srt${mixId != null ? `?mix_id=${mixId}` : ''}`;
 export const songLrcUrl = (songId: number) => `${API_BASE}${base}/songs/${songId}/lrc`;
 
 export function useCoverSettings(projectId: number) {

@@ -95,6 +95,12 @@ Tool chạy cổng **8200** nên dùng song song được với tool Cover nhạ
 
 - Mỗi project có thư mục **`media\...\<tên project>\nhac_mix\`** chứa **đúng 1 file nhạc
   đã mix** (`<tên project>.wav`). Mix lại thì file này được thay bằng bản mới nhất.
+- Cùng thư mục có **`<tên project>.srt`** — **lời bài hát cho CapCut**: chỉ có lời, mỗi câu
+  hiện đúng lúc câu đó được hát trong bản mix (không có tên bài, ca sĩ hay chữ nào khác).
+  Trong CapCut: kéo file nhạc `.wav` vào, rồi kéo luôn file `.srt` vào (hoặc **Văn bản → Nhập
+  phụ đề / Captions → Import**) — lời tự khớp theo nhạc, chỉ cần chọn font/màu cho đẹp.
+- Tải lại file lời bất cứ lúc nào: tab **③ Lời bài hát** → nút **⬇ Lời cho CapCut (.srt)**,
+  hoặc nút **Lời .srt (CapCut)** cạnh từng bản trong *Mix History*.
 - Bản mix gốc kèm thông tin chi tiết nằm trong `outputs\<số project>\<số mix>\`.
 
 ## Setting đã giữ sẵn
