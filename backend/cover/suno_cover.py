@@ -1705,6 +1705,39 @@ class CoverDriver(SunoDriver):
         # render thật sự hoàn tất trước khi mở submenu; nếu không click vào mục
         # disabled sẽ không điều hướng và workflow dừng giả.
         self._wait_preparing_done(timeout_sec=300)
+        # Đo LIVE 12/11/2026: bấm Cover chỉ ~11 giây sau «Save as New Song» thì
+        # Suno chưa xử lý xong bài mới → click không ăn, menu vẫn mở. Lần chạy
+        # sau (bài đã sẵn sàng) bấm Cover chuyển sang /create?remix_clip=…&
+        # remix_type=cover ngay trong 1 giây. Vì vậy thử lại tối đa 3 lần:
+        # đóng menu, chờ lâu dần, tải lại trang bài rồi bấm lại. Không tự
+        # điều hướng /create (sẽ mất audio nguồn), không bấm Create.
+        attempts = 3
+        for attempt in range(1, attempts + 1):
+            if self._remix_cover_once(song_id, attempt):
+                return
+            if attempt < attempts:
+                pause = 15 * attempt
+                self._log(f"Suno chưa nhận cú bấm Cover (lần {attempt}/{attempts}) — "
+                          f"có thể bài vừa lưu còn đang xử lý; chờ {pause} giây, "
+                          "tải lại trang bài rồi bấm lại.")
+                try:
+                    self.page.keyboard.press("Escape")
+                except Exception:
+                    pass
+                self._wait(pause * 1000)
+                try:
+                    self.page.reload(wait_until="domcontentloaded")
+                except Exception:
+                    pass
+                self._ensure_song_open(song_id)
+                self._wait_preparing_done(timeout_sec=120)
+        raise self._ui_changed(
+            f"Đã bấm Remix → Cover {attempts} lần nhưng Suno không chuyển sang form "
+            "Create; tool không tự điều hướng để tránh làm mất audio nguồn.",
+            "remix_cover_no_navigation")
+
+    def _remix_cover_once(self, song_id: str, attempt: int) -> bool:
+        """Một lượt ⋯ → Remix → Cover. True = Suno đã sang form Create/Cover."""
         self._open_song_menu(song_id)
         remix = query_first(self.page, [
             "[role=menu] div.hxc-menu-item:has-text('Remix')",
@@ -1736,7 +1769,7 @@ class CoverDriver(SunoDriver):
             raise self._ui_changed("Submenu Remix không có «Cover».", "no_remix_cover")
         before_url = self.page.url or ""
         self._click(cover)
-        self._log("Đã bấm Remix → Cover — chờ Suno gắn audio vào form Create.")
+        self._log(f"Đã bấm Remix → Cover (lần {attempt}) — chờ Suno gắn audio vào form Create.")
         deadline = time.time() + 20
         while time.time() < deadline:
             self._wait(800)
@@ -1744,11 +1777,9 @@ class CoverDriver(SunoDriver):
             if "/create" in url or self.cover_ready() or self._top_dialog():
                 self._log(f"Sau Remix → Cover: {before_url} → {url}.")
                 self.save_debug("after_remix_cover")
-                return
-        raise self._ui_changed(
-            "Đã bấm Remix → Cover nhưng Suno không chuyển sang form Create; "
-            "tool không tự điều hướng để tránh làm mất audio nguồn.",
-            "remix_cover_no_navigation")
+                return True
+        self.save_debug(f"remix_cover_no_navigation_try{attempt}")
+        return False
 
     def attach_original(self, path: Path, human_wait_sec: float = 1800) -> None:
         """Đính file bài gốc vào form Create và chuyển sang chế độ Cover.

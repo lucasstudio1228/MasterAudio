@@ -123,3 +123,17 @@ không muốn chia sẻ project/đăng nhập của bạn).
 Lyrics gửi lên Suno phải giữ nguyên chữ tự nhiên (không thay dấu cách bằng `_`, không
 làm biến dạng chữ). Bài bị Suno báo bản quyền sẽ được đánh dấu `rejected` và tool
 chuyển sang bài tiếp theo.
+
+## Quy trình chuẩn ② Suno Cover (bán thủ công, kiểm chứng 12/11/2026)
+
+1. **Tool:** chuẩn hoá lời (bước 6) + soạn Styles (bước 7), upload bản WAV tempo lên Suno, mở **Suno Editor**.
+2. **Bạn:** trong Editor chỉnh **Tempo** (tool gợi ý, vd 32) → bấm **Save as New Song**. Không cần làm gì khác.
+3. **Tool:** tự nhận bài vừa lưu, mở trang bài → **⋯ → Remix → Cover**. Nếu Suno còn đang xử lý
+   bài vừa lưu và chưa nhận cú bấm, tool tự chờ rồi bấm lại (tối đa 3 lần, ~2 phút).
+4. **Tool:** điền form Cover: lời bài hát, Styles, Max Mode, thanh trượt (Weirdness 10, Style
+   Influence 75, Audio Influence 50).
+5. **Bạn:** xem lại form trong cửa sổ Suno rồi tự bấm **Create** (tool không bao giờ tự bấm).
+6. **Tool:** nhận 2 bản Suno tạo ra, tải về, master, chuyển sang bài tiếp theo.
+
+Nếu Suno báo lời/nhạc có bản quyền, bài bị đánh dấu *rejected* và tool chuyển sang bài sau.
+Muốn tool dùng mã mới sau khi cập nhật: chỉ khởi động lại khi **không** có việc đang chạy.
