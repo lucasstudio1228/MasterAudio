@@ -40,3 +40,17 @@
 - **Sau:** chọn được Audio + Video (mặc định, như cũ) hoặc Chỉ audio khi tạo lô và ở thanh tác vụ; nút mở thư mục chỉ hiện khi đã có audio / final.mp4.
 - **Kiểm thử:** `tests.test_audio_only_mode` + `tests.test_cover_singles_batch` 15 OK; 8 module project/task (gồm `test_tasks_auto`) 64 OK. `npm run build` OK (tool chính, Cover Audio Tool). Kiểm tra trên server thử cổng 8101: nút mở thư mục audio của #27 → POST open-folder 200; nút video final hiện ở #19; form tạo lô hiện lựa chọn Kiểu chạy auto; không tạo lô thật.
 - **Tồn đọng:** backend 8100 phải khởi động lại (khi không có job) mới có endpoint mới — trước đó nút «Auto chỉ audio» gửi tới backend cũ sẽ bị bỏ qua tham số và chạy cả video. Cover Audio Tool (8200) cũng cần khởi động lại.
+
+## 2026-11-12 11:40 — Tab Suno Cover: nút «🗑 Xoá bản này» cho từng bản cover + thùng rác khôi phục theo bài
+
+- **Yêu cầu:** "phần này có nhiều bản, thêm nút chức năng xoá bản nào không sử dụng. Để ở thùng rác, có thể phục hồi" (danh sách Bài gốc → bản cover, vd Lưu Niên có 4 bản).
+- **Nguyên nhân:** mỗi bài có nhiều bản Suno nhưng tab Suno Cover chỉ có «Báo lỗi»/«Tạo lại», không có cách bỏ bản không dùng; thùng rác track đã có ở backend nhưng chỉ dùng được ở phần thêm file nhạc.
+- **File đã đổi:**
+  - `backend/routers/tracks.py`: `/tracks/recovery` trả thêm `source_id` cho mỗi mục (hàm mới `_snapshot_source_id`); `_orphan_cover_files` bỏ qua file đang nằm trong thùng rác (trước đó 1 bản đã xoá hiện trùng 2 lần: mục thùng rác + "file cũ").
+  - `frontend/src/api/tracks.ts`: kiểu `source_id`; xoá/khôi phục track làm mới luôn query `sources` và `cover-songs`.
+  - `frontend/src/components/cover/SunoCoverPanel.tsx`: nút «🗑 Xoá bản này» ở mỗi bản cover (hỏi xác nhận, khoá khi bài đang chạy Suno); khối «🗑 Thùng rác (N)» dưới mỗi bài: nghe thử, «♻ Khôi phục» từng bản, «♻ Khôi phục tất cả».
+  - Test: `tests/test_track_recovery.py` thêm `test_delete_one_cover_version_then_restore_it` (chỉ tool chính).
+- **Trước:** không xoá được từng bản cover ở tab Suno Cover.
+- **Sau:** xoá bản không dùng → vào thùng rác (file trên máy giữ nguyên), khôi phục lại đúng vị trí/bài gốc/lời. Bài đã «Loại bài» vẫn khôi phục bằng nút của bài như cũ (không hiện thùng rác riêng).
+- **Kiểm thử:** `tests.test_track_recovery` + `tests.test_audio_only_mode` 9 OK. Chạy thêm 6 module cover: lỗi chỉ nằm ở `tests.test_suno_cover` (FakeDriver thiếu tham số `manual_editor` — test cũ từ trước, không liên quan thay đổi này). `npm run build` OK. Server thử 8101: project #27 hiện 4 nút «🗑 Xoá bản này»; không xoá dữ liệu thật.
+- **Tồn đọng:** khởi động lại backend 8100/8200 khi rảnh để có `source_id` (trước đó khối thùng rác theo bài chưa hiện, nút xoá vẫn chạy). Cập nhật FakeDriver trong `tests/test_suno_cover.py` cho tham số `manual_editor`.

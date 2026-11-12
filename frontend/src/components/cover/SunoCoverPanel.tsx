@@ -24,6 +24,12 @@ import {
   type SunoStatus,
   type SunoWorker,
 } from '../../api/sources';
+import {
+  recoveryAudioUrl,
+  useDeleteTrack,
+  useRestoreSelectedTracks,
+  useTrackRecovery,
+} from '../../api/tracks';
 import MasterPanel, { CoverMasterLine } from './MasterPanel';
 import OwnCoverPanel from './OwnCoverPanel';
 import SunoLoginPanel from './SunoLoginPanel';
@@ -258,6 +264,7 @@ function CoverRow({ projectId, source, cover, redoBpm, settingsPending }:
   { projectId: number; source: SourceSong; cover: SourceCover; redoBpm?: string; settingsPending?: boolean }) {
   const mark = useMarkCover(projectId);
   const redo = useRedoCover(projectId);
+  const trash = useDeleteTrack(projectId);
   const [err, setErr] = useState<string | null>(null);
   const qc = cover.qc;
   const status = qc?.status ?? 'pending';
@@ -265,7 +272,7 @@ function CoverRow({ projectId, source, cover, redoBpm, settingsPending }:
   const errors = qc?.issues.filter((i) => i.level === 'error') ?? [];
   const notes = qc?.issues.filter((i) => i.level === 'warning') ?? [];
   const onErr = (e: unknown) => setErr(errText(e));
-  const busy = mark.isPending || redo.isPending || !!settingsPending;
+  const busy = mark.isPending || redo.isPending || trash.isPending || !!settingsPending;
   const sunoBusy = source.suno_status === 'queued' || source.suno_status === 'running';
   const bpm = Number(redoBpm);
   const validBpm = Number.isFinite(bpm) && bpm >= 20 && bpm <= 300;
@@ -359,6 +366,21 @@ function CoverRow({ projectId, source, cover, redoBpm, settingsPending }:
             🚩 Báo lỗi
           </button>
         )}
+        <button className={`${btnSm} ml-auto text-gray-400 hover:text-red-300`}
+          disabled={busy || sunoBusy}
+          title={sunoBusy ? 'Bài này đang làm trên Suno — đợi xong'
+            : 'Không dùng bản này → chuyển vào thùng rác (file vẫn giữ, khôi phục được ở «Thùng rác» bên dưới)'}
+          onClick={() => {
+            if (!window.confirm(
+              `Chuyển «${cover.filename}» vào thùng rác?\n\n`
+              + '• Bản này không còn được dùng để master / ghép mix / làm video.\n'
+              + '• File trên máy KHÔNG bị xoá — bấm «♻ Khôi phục» trong Thùng rác để lấy lại.',
+            )) return;
+            setErr(null);
+            trash.mutate(cover.track_id, { onError: onErr });
+          }}>
+          🗑 Xoá bản này
+        </button>
         {err && <span className="text-xs text-red-400">{err}</span>}
       </div>
     </div>
@@ -486,6 +508,64 @@ function SunoControls({ projectId, items, worker }:
 }
 
 // ---------------------------------------------------------------- 1 bài gốc
+/** Thùng rác các bản cover đã xoá của 1 bài — nghe thử và khôi phục. */
+function CoverTrash({ projectId, sourceId }: { projectId: number; sourceId: number }) {
+  const { data } = useTrackRecovery(projectId);
+  const restore = useRestoreSelectedTracks(projectId);
+  const [open, setOpen] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const items = (data?.items ?? []).filter((i) => i.source_id === sourceId);
+  if (items.length === 0) return null;
+  const run = (ids: number[]) => {
+    setErr(null);
+    restore.mutate({ trash_ids: ids, orphan_files: [] }, {
+      onSuccess: (r) => {
+        if (r.missing_files > 0) setErr(`${r.missing_files} bản không còn file trên máy nên không khôi phục được.`);
+      },
+      onError: (e) => setErr(errText(e)),
+    });
+  };
+  return (
+    <div className="mt-2 pl-8">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <button className={`${btnSm} text-gray-400`} onClick={() => setOpen(!open)}>
+          🗑 Thùng rác ({items.length}) {open ? '▾' : '▸'}
+        </button>
+        {open && items.length > 1 && (
+          <button className={btnSm} disabled={restore.isPending}
+            onClick={() => run(items.filter((i) => i.file_exists).map((i) => i.id))}>
+            ♻ Khôi phục tất cả
+          </button>
+        )}
+        {err && <span className="text-red-400">{err}</span>}
+      </div>
+      {open && (
+        <div className="mt-1.5 space-y-1.5">
+          {items.map((i) => (
+            <div key={i.id} className="rounded-md border border-dashed border-white/10 px-2 py-1.5 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="min-w-0 flex-1 truncate text-gray-400" title={i.filename}>🗑 {i.filename}</span>
+                {i.file_exists ? (
+                  <button className={btnSm} disabled={restore.isPending}
+                    title="Đưa bản này trở lại danh sách bản cover"
+                    onClick={() => run([i.id])}>
+                    ♻ Khôi phục
+                  </button>
+                ) : (
+                  <span className="text-red-400">File đã mất trên máy</span>
+                )}
+              </div>
+              {i.file_exists && (
+                <audio controls preload="none" src={recoveryAudioUrl(projectId, i.id)} className="mt-1 h-8 w-full" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SourceRow({ projectId, s, index, worker }:
   { projectId: number; s: SourceSong; index: number; worker?: SunoWorker }) {
   const one = useSunoOne(projectId);
@@ -717,6 +797,7 @@ function SourceRow({ projectId, s, index, worker }:
             source={s} cover={c} redoBpm={redoBpm} settingsPending={update.isPending} />)}
         </div>
       )}
+      {!excluded && <CoverTrash projectId={projectId} sourceId={s.id} />}
     </li>
   );
 }

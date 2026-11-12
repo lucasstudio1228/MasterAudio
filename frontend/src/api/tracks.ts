@@ -6,7 +6,10 @@ export interface TrackRecoveryInfo {
   trash_count: number;
   orphan_count: number;
   total: number;
-  items: { id: number; filename: string; file_exists: boolean; deleted_at: string }[];
+  items: {
+    id: number; filename: string; file_exists: boolean; deleted_at: string;
+    source_id?: number | null;   // bản cover thuộc bài gốc nào (null = track thường)
+  }[];
   orphan_files: string[];
 }
 
@@ -24,6 +27,9 @@ function invalidate(qc: ReturnType<typeof useQueryClient>, projectId: number) {
   qc.invalidateQueries({ queryKey: ['project', projectId] });
   qc.invalidateQueries({ queryKey: ['projects'] });
   qc.invalidateQueries({ queryKey: ['track-recovery', projectId] });
+  // Tab Suno Cover / Lời bài hát đọc danh sách bản cover từ các query này.
+  qc.invalidateQueries({ queryKey: ['sources', projectId] });
+  qc.invalidateQueries({ queryKey: ['cover-songs', projectId] });
 }
 
 export function useTrackRecovery(projectId: number) {

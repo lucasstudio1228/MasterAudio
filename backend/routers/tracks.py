@@ -124,12 +124,26 @@ def _restore_snapshot(session: Session, row: DeletedTrack) -> Track | None:
     return track
 
 
+def _snapshot_source_id(row: DeletedTrack) -> int | None:
+    """Bài gốc (SourceSong) của bản cover nằm trong thùng rác, nếu có."""
+    try:
+        value = json.loads(row.cover_song_json or "{}").get("source_id")
+    except (TypeError, ValueError, AttributeError):
+        return None
+    return value if isinstance(value, int) else None
+
+
 def _orphan_cover_files(session: Session, project) -> list[Path]:
     """File cover còn trên disk nhưng Track đã bị xoá trước khi có thùng rác."""
     from backend.cover import nct_jobs
     from backend.video import config as video_config
     folder = nct_jobs.cover_dir(project.id, project.name)
     active = _existing_paths(session, project.id)
+    # File đang nằm trong thùng rác đã có mục khôi phục riêng (giữ lời/bài gốc)
+    # → không liệt kê lại thành "file cũ" để khỏi trùng.
+    active |= {str(Path(p).resolve()) for p in session.exec(
+        select(DeletedTrack.filepath).where(
+            DeletedTrack.project_id == project.id)).all()}
     if not folder.is_dir():
         return []
     paths = [
@@ -295,7 +309,8 @@ def recovery_info(project_id: int, session: Session = Depends(get_session)):
         "total": len(trash) + len(orphans),
         "items": [{"id": r.id, "filename": r.filename,
                    "file_exists": Path(r.filepath).is_file(),
-                   "deleted_at": r.deleted_at} for r in trash],
+                   "deleted_at": r.deleted_at,
+                   "source_id": _snapshot_source_id(r)} for r in trash],
         "orphan_files": [p.name for p in orphans],
     }
 
