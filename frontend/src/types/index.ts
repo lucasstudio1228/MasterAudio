@@ -70,6 +70,7 @@ export interface MixSetCreate {
   intro_mode?: IntroMode;
   cast_mode?: CastMode;
   footage_scene_mode?: FootageSceneMode;
+  audio_only?: boolean;          // true = chạy auto CHỈ AUDIO (không dựng video)
 }
 
 export interface InstrumentOption {

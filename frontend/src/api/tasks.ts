@@ -46,9 +46,11 @@ export function useGlobalTaskControl(action: 'pause-all' | 'stop-all' | 'resume-
 export function useAutoRunToEnd() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (projectId?: number) => (await api.post(
+    mutationFn: async ({ projectId, audioOnly = false }:
+      { projectId?: number; audioOnly?: boolean }) => (await api.post(
       '/api/tasks/auto-run', null,
-      { params: projectId != null ? { project_id: projectId } : undefined },
+      { params: { ...(projectId != null ? { project_id: projectId } : {}),
+                  audio_only: audioOnly } },
     )).data as { ok: boolean; project_id: number; status: string },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['global-tasks'] }),
   });

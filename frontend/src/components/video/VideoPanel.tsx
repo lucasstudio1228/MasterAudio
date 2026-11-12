@@ -9,7 +9,12 @@ import {
   useYoutubeHistory, useOpenVideoBrowser, useCloseVideoBrowser, useMakeThumbnail,
   videoDownloadUrl, videoThumbnailUrl, videoImageUrl, videoClipUrl,
 } from "../../api/video";
-import { useProject, useUpdateProject } from "../../api/projects";
+import {
+  useOpenProjectFolder,
+  useProject,
+  useProjectFolders,
+  useUpdateProject,
+} from "../../api/projects";
 import ManualClipsPanel from "./ManualClipsPanel";
 import { apiErrorText, useChannelMappings } from "../../api/youtube";
 import { vndText, ChatGPTLoginPanel } from "../settings/ThumbnailAiSettings";
@@ -74,6 +79,8 @@ export default function VideoPanel({ projectId }: { projectId: number }) {
   const { data: shortCfg } = useShortSettings(projectId);
   const saveShortCfg = useSaveShortSettings(projectId);
   const { data: ytHistory, refetch: refetchYtHistory } = useYoutubeHistory(projectId);
+  const { data: folders } = useProjectFolders(projectId);
+  const openFolder = useOpenProjectFolder(projectId);
   const openBrowser  = useOpenVideoBrowser(projectId);
   const closeBrowser = useCloseVideoBrowser(projectId);
   const [idea, setIdea] = useState("");
@@ -378,6 +385,17 @@ export default function VideoPanel({ projectId }: { projectId: number }) {
               >
                 ⬇ Tải video final.mp4
               </a>
+            )}
+            {st.final_exists && folders?.video && (
+              <button
+                type="button"
+                onClick={() => openFolder.mutate("video")}
+                disabled={openFolder.isPending}
+                title={`Mở thư mục trên máy tính, chọn sẵn file: ${folders.video}`}
+                className={`${primary} mt-2 block`}
+              >
+                📂 Mở thư mục video final
+              </button>
             )}
           </Section>
         )}

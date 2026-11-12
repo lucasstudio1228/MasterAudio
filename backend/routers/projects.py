@@ -283,8 +283,10 @@ async def create_mixset(
     intro_mode: str = Form("thumbnail"), cast_mode: str = Form("character_pet"),
     footage_scene_mode: str = Form("auto"),
     creative_instrument: bool = Form(True),
+    audio_only: bool = Form(False),
 ):
-    """Một danh sách bài → một project Mix Set → cover/mix/video/YouTube draft."""
+    """Một danh sách bài → một project Mix Set → cover/mix/video/YouTube draft.
+    audio_only=True: chỉ làm audio (cover → master → mix), không dựng video."""
     from backend import batch_service
     try:
         lines = _read_mixset_lines(file.filename or "", await file.read())
@@ -295,7 +297,7 @@ async def create_mixset(
             mix_duration_minutes=mix_duration_minutes,
             intro_mode=intro_mode, cast_mode=cast_mode,
             footage_scene_mode=footage_scene_mode,
-            creative_instrument=creative_instrument)
+            creative_instrument=creative_instrument, audio_only=audio_only)
     except (RuntimeError, ValueError) as exc:
         raise HTTPException(422, str(exc)) from exc
 
@@ -309,8 +311,10 @@ async def create_singles(
     intro_mode: str = Form("thumbnail"), cast_mode: str = Form("character_pet"),
     footage_scene_mode: str = Form("auto"),
     creative_instrument: bool = Form(True),
+    audio_only: bool = Form(False),
 ):
-    """Một danh sách bài → MỖI BÀI một project Track lẻ (ảnh bìa + video riêng)."""
+    """Một danh sách bài → MỖI BÀI một project Track lẻ (ảnh bìa + video riêng).
+    audio_only=True: mỗi bài dừng sau khi master xong, không dựng video."""
     from backend import batch_service
     try:
         lines = _read_mixset_lines(file.filename or "", await file.read())
@@ -319,9 +323,53 @@ async def create_singles(
             channel_id=channel_id, video_style=video_style, theme=theme,
             intro_mode=intro_mode, cast_mode=cast_mode,
             footage_scene_mode=footage_scene_mode,
-            creative_instrument=creative_instrument)
+            creative_instrument=creative_instrument, audio_only=audio_only)
     except (RuntimeError, ValueError) as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+def _project_folders(session: Session, project_id: int) -> dict:
+    """Thư mục audio (để nghe) và thư mục video final (nếu đã render)."""
+    from backend import batch_service
+    from backend.video import config as vconfig
+    project = session.get(Project, project_id)
+    if project is None or project.deleted_at:
+        raise HTTPException(404, "Không tìm thấy project.")
+    audio = batch_service.audio_folder(project_id)
+    final = vconfig.final_dir(project_id, project.name) / "final.mp4"
+    return {
+        "audio": str(audio) if audio else None,
+        "video": str(final) if final.is_file() else None,
+    }
+
+
+@router.get("/{project_id}/folders")
+def project_folders(project_id: int, session: Session = Depends(get_session)):
+    return _project_folders(session, project_id)
+
+
+@router.post("/{project_id}/open-folder")
+def open_project_folder(project_id: int, what: str = "audio",
+                        session: Session = Depends(get_session)):
+    """Mở thư mục trên máy (File Explorer) — backend chạy ngay trên máy người
+    dùng. what=audio: thư mục nhạc đã xong; what=video: chọn sẵn final.mp4."""
+    import os
+    import subprocess
+    if what not in ("audio", "video"):
+        raise HTTPException(400, "what phải là audio hoặc video.")
+    folders = _project_folders(session, project_id)
+    target = folders[what]
+    if not target:
+        raise HTTPException(404, "Chưa có audio để nghe." if what == "audio"
+                            else "Chưa có video final.mp4.")
+    try:
+        if what == "video":
+            subprocess.Popen(["explorer", "/select,", os.path.normpath(target)])
+        else:
+            os.startfile(target)  # type: ignore[attr-defined]
+    except (OSError, AttributeError) as exc:
+        raise HTTPException(500, f"Không mở được thư mục: {exc}") from exc
+    return {"ok": True, "path": target}
 
 
 @router.post("/batch", response_model=BatchRunResponse)

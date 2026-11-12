@@ -415,8 +415,11 @@ def create_cover_mixset(name: str, song_lines: list[str], music_style: str,
                         intro_mode: str = "thumbnail",
                         cast_mode: str = "character_pet",
                         footage_scene_mode: str = "auto",
-                        creative_instrument: bool = True) -> dict:
+                        creative_instrument: bool = True,
+                        audio_only: bool = False) -> dict:
     """Tạo MỘT project cover từ danh sách bài và chạy tuần tự end-to-end.
+    audio_only: True → chỉ làm audio (Suno → master → ghép mix), không dựng
+    video/không lưu nháp YouTube.
     creative_instrument: True → mỗi bài để AI tự chọn thêm 1 nhạc cụ nổi bật khi
     viết style Suno (featured_instrument ""); False → tắt cho mọi bài."""
     from backend.cover.style_prompt import NO_CREATIVE_INSTRUMENT
@@ -457,6 +460,7 @@ def create_cover_mixset(name: str, song_lines: list[str], music_style: str,
         "intro_mode": intro_mode, "cast_mode": cast_mode,
         "footage_scene_mode": footage_scene_mode,
         "creative_instrument": bool(creative_instrument),
+        "audio_only": bool(audio_only),
     }
     instrument = "" if creative_instrument else NO_CREATIVE_INSTRUMENT
     with Session(engine) as session:
@@ -465,8 +469,9 @@ def create_cover_mixset(name: str, song_lines: list[str], music_style: str,
             video_style=style_key, instrument="", music_style=music_style,
             music_line=music_line, channel_id=channel_id, intro_mode=intro_mode,
             cast_mode=cast_mode, footage_scene_mode=footage_scene_mode,
-            creative_instrument=bool(creative_instrument), music_source="local", auto_video=True,
-            auto_upload=True, batch_id=batch_key, kind="mixset",
+            creative_instrument=bool(creative_instrument), music_source="local",
+            auto_video=not audio_only, auto_upload=not audio_only,
+            batch_id=batch_key, kind="mixset",
             mix_duration_minutes=float(mix_duration_minutes))
         session.add(project)
         session.flush()
@@ -480,7 +485,8 @@ def create_cover_mixset(name: str, song_lines: list[str], music_style: str,
         run = BatchRun(
             batch_key=batch_key, total=1, status="running", current_index=0,
             current_project_id=project.id, params_json=json.dumps(params, ensure_ascii=False),
-            message=f"Đã tạo Mix Set với {len(lines)} bài — bắt đầu tải bài gốc.")
+            message=f"Đã tạo Mix Set với {len(lines)} bài"
+                    + (" (chỉ audio)" if audio_only else "") + " — bắt đầu tải bài gốc.")
         session.add(run)
         session.commit()
         pid = project.id
@@ -535,9 +541,12 @@ def _cover_chain(batch_key: str, project_id: int, source_ids: list[int],
     def say(message: str) -> None:
         _mixset_message(batch_key, prefix + message)
 
+    audio_only = _is_audio_only(project_id)
+    if audio_only and _verify_audio(project_id)[0]:
+        return
     # Resume không được chạy lại Suno/đốt credit nếu chuỗi đã tới Video/Upload.
     final_dir, project_name = _project_paths(project_id)
-    if (final_dir / "final.mp4").is_file():
+    if not audio_only and (final_dir / "final.mp4").is_file():
         if not _has_youtube_draft(project_id):
             from backend.video import service as video_service
             with Session(engine) as session:
@@ -651,7 +660,16 @@ def _cover_chain(batch_key: str, project_id: int, source_ids: list[int],
             "idea": (project.video_idea if project else "") or "",
             "style": (project.video_style if project else "") or None,
         }
-    if is_single:
+    if audio_only and is_single:
+        ok, detail = _verify_audio(project_id)
+        if not ok:
+            raise RuntimeError(f"Chưa hoàn tất audio: {detail}.")
+        say("Đã xong audio (chế độ Chỉ audio) — không dựng video.")
+        return
+    if audio_only:
+        say("Đã đủ cover — ghép Mix Set (chế độ Chỉ audio, không dựng video).")
+        mixes.start_mix_for_project(project_id, force_video=False)
+    elif is_single:
         # Track lẻ: tuyệt đối không render Mix một bài. Dùng trực tiếp cover đã
         # master rồi chuyển sang Video; service tự lấy đúng Track/CoverSong.
         from backend.video import service as video_service
@@ -676,8 +694,8 @@ def _cover_chain(batch_key: str, project_id: int, source_ids: list[int],
     while time.time() < deadline and not ev.is_set():
         busy = job_manager.is_busy() or video_job_manager.is_busy()
         idle = 0 if busy else idle + 1
-        say("Đang ghép nhạc/dựng video…" if busy
-            else "Đang chờ bàn giao sang bước tiếp theo…")
+        say(("Đang ghép nhạc…" if audio_only else "Đang ghép nhạc/dựng video…")
+            if busy else "Đang chờ bàn giao sang bước tiếp theo…")
         if idle >= 3:
             break
         time.sleep(5)
@@ -689,6 +707,86 @@ def _cover_chain(batch_key: str, project_id: int, source_ids: list[int],
                            f"tài khoản — {acct[:200]}")
         raise RuntimeError(
             f"Chuỗi chưa hoàn tất ({detail}); mở project rồi bấm Tiếp tục.")
+
+
+def _is_audio_only(pid: int) -> bool:
+    """Lô của project đang ở chế độ «Chỉ audio» (params_json.audio_only)."""
+    with Session(engine) as session:
+        proj = session.get(Project, pid)
+        key = (proj.batch_id if proj else "") or ""
+        run = (session.exec(select(BatchRun).where(BatchRun.batch_key == key)).first()
+               if key else None)
+    if run is None:
+        return False
+    try:
+        return bool(json.loads(run.params_json or "{}").get("audio_only"))
+    except (TypeError, ValueError):
+        return False
+
+
+def set_audio_only(batch_key: str, audio_only: bool) -> None:
+    """Đổi chế độ của lô (Chỉ audio ↔ Audio + Video) và cờ auto_video/upload
+    của các project trong lô, để Mix xong không tự dựng video ngoài ý muốn."""
+    with Session(engine) as session:
+        run = session.exec(select(BatchRun).where(
+            BatchRun.batch_key == batch_key)).first()
+        if run is None:
+            return
+        params = json.loads(run.params_json or "{}")
+        params["audio_only"] = bool(audio_only)
+        run.params_json = json.dumps(params, ensure_ascii=False)
+        session.add(run)
+        for proj in session.exec(select(Project).where(
+                Project.batch_id == batch_key)).all():
+            proj.auto_video = not audio_only
+            proj.auto_upload = not audio_only
+            session.add(proj)
+        session.commit()
+
+
+def audio_folder(pid: int) -> Optional[Path]:
+    """Thư mục chứa audio đã xong để nghe: Mix Set → nhac_mix (bản mix);
+    Track lẻ → ban_cover/mastered (hoặc ban_cover nếu chưa master)."""
+    from backend.cover.mastering import MASTER_DIR
+    from backend.cover.mix_export import MIX_AUDIO_DIR
+    from backend.cover.nct_jobs import cover_dir
+    from backend.video import config as vconfig
+    with Session(engine) as session:
+        proj = session.get(Project, pid)
+        if proj is None:
+            return None
+        name, kind = proj.name, (getattr(proj, "kind", "") or "mixset")
+    audio_ext = (".wav", ".mp3", ".flac", ".m4a")
+
+    def has_audio(folder: Path) -> bool:
+        try:
+            return folder.is_dir() and any(
+                f.suffix.lower() in audio_ext for f in folder.iterdir() if f.is_file())
+        except OSError:
+            return False
+
+    cover = cover_dir(pid, name)
+    order = [cover / MASTER_DIR, cover]
+    if kind != "single":
+        order.insert(0, vconfig.project_dir(pid, name) / MIX_AUDIO_DIR)
+    for folder in order:
+        if has_audio(folder):
+            return folder
+    return None
+
+
+def _verify_audio(pid: int) -> tuple[bool, str]:
+    """Chế độ Chỉ audio: Track lẻ cần ít nhất 1 bản cover; Mix Set cần bản mix."""
+    from backend.cover.mix_export import MIX_AUDIO_DIR
+    folder = audio_folder(pid)
+    if folder is None:
+        return (False, "chưa có file audio")
+    with Session(engine) as session:
+        proj = session.get(Project, pid)
+        kind = (getattr(proj, "kind", "") if proj else "") or "mixset"
+    if kind != "single" and folder.name != MIX_AUDIO_DIR:
+        return (False, "chưa ghép xong bản mix")
+    return (True, f"audio đã có trong {folder}")
 
 
 def _first_cover_audio(source_ids: list[int]) -> Optional[str]:
@@ -743,7 +841,8 @@ def create_cover_singles(song_lines: list[str], music_style: str,
                          intro_mode: str = "thumbnail",
                          cast_mode: str = "character_pet",
                          footage_scene_mode: str = "auto",
-                         creative_instrument: bool = True) -> dict:
+                         creative_instrument: bool = True,
+                         audio_only: bool = False) -> dict:
     """Track lẻ: mỗi dòng trong danh sách → 1 project riêng (1 bài, 1 ảnh bìa, 1
     video, 1 nháp YouTube). Chạy tuần tự từng bài; phong cách ảnh xoay vòng theo
     kênh để mỗi video một vẻ."""
@@ -792,6 +891,7 @@ def create_cover_singles(song_lines: list[str], music_style: str,
         "intro_mode": intro_mode, "cast_mode": cast_mode,
         "footage_scene_mode": footage_scene_mode,
         "creative_instrument": bool(creative_instrument),
+        "audio_only": bool(audio_only),
     }
     instrument = "" if creative_instrument else NO_CREATIVE_INSTRUMENT
     theme = (theme or "").strip()
@@ -805,8 +905,8 @@ def create_cover_singles(song_lines: list[str], music_style: str,
                 channel_id=channel_id, intro_mode=intro_mode, cast_mode=cast_mode,
                 footage_scene_mode=footage_scene_mode,
                 creative_instrument=bool(creative_instrument),
-                music_source="local", auto_video=True, auto_upload=True,
-                batch_id=batch_key, kind="single")
+                music_source="local", auto_video=not audio_only,
+                auto_upload=not audio_only, batch_id=batch_key, kind="single")
             session.add(project)
             session.flush()
             first_id = first_id or project.id
@@ -881,7 +981,8 @@ def _run_cover_singles(batch_key: str) -> None:
         try:
             _cover_chain(batch_key, pid, source_ids, ev, prefix)
             done += 1
-            update(completed=done, message=prefix + "xong (video + nháp YouTube).")
+            update(completed=done, message=prefix + (
+                "xong audio." if _is_audio_only(pid) else "xong (video + nháp YouTube)."))
         except _MissingLyricsWait:
             waiting.append(name)
             update(message=prefix + "thiếu lời — để lại, làm bài kế tiếp.")
@@ -1345,7 +1446,10 @@ def _verify_product(pid: int) -> tuple[bool, str]:
 def _verify_video_product(pid: int) -> tuple[bool, str]:
     """Sản phẩm CHỈ được tính là xong khi có final.mp4 VÀ đã lưu nháp YouTube —
     không tin mỗi 'job đã chạy xong' (job video có thể hỏng mà Suno vẫn
-    COMPLETED, lúc đó cả 2 manager đều rảnh và dễ bị chấm nhầm là hoàn tất)."""
+    COMPLETED, lúc đó cả 2 manager đều rảnh và dễ bị chấm nhầm là hoàn tất).
+    Lô «Chỉ audio»: xong khi đã có file audio (bản cover / bản mix)."""
+    if _is_audio_only(pid):
+        return _verify_audio(pid)
     final = _project_paths(pid)[0] / "final.mp4"
     if not final.exists():
         return (False, "thiếu final.mp4")

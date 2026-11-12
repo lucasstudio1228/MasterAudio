@@ -137,3 +137,12 @@ chuyển sang bài tiếp theo.
 
 Nếu Suno báo lời/nhạc có bản quyền, bài bị đánh dấu *rejected* và tool chuyển sang bài sau.
 Muốn tool dùng mã mới sau khi cập nhật: chỉ khởi động lại khi **không** có việc đang chạy.
+
+## Chạy auto: 2 kiểu + nút mở thư mục (12/11/2026)
+
+- Khi tạo lô Mix Set / Track lẻ, chọn **Kiểu chạy auto**:
+  - **🎬 Audio + Video** (mặc định): cover → master → (ghép mix) → dựng video → lưu nháp YouTube.
+  - **🎧 Chỉ audio**: cover → master (Mix Set thêm bước ghép mix) rồi dừng, không dựng video.
+- Thanh tác vụ dưới cùng có 2 nút: **🎧 Auto chỉ audio** và **🚀 Auto audio + video** (nối tiếp từ chỗ đang dừng).
+- Tab **③ Lời bài hát**: nút **📂 Mở thư mục nghe audio** mở thư mục nhạc đã xong trên máy.
+- Tab **Video**: sau khi render xong có nút **📂 Mở thư mục video final** (chọn sẵn file final.mp4).

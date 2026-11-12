@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useOpenProjectFolder, useProjectFolders } from '../../api/projects';
 import {
   songAudioUrl,
   songLrcUrl,
@@ -151,6 +152,20 @@ function SettingsCard({ projectId }: { projectId: number }) {
 }
 
 // ---------------------------------------------------------------- Danh sách bài
+/** Nút mở thư mục audio đã xong trên máy (File Explorer) để nghe. */
+function OpenAudioFolderButton({ projectId }: { projectId: number }) {
+  const { data } = useProjectFolders(projectId);
+  const open = useOpenProjectFolder(projectId);
+  if (!data?.audio) return null;
+  return (
+    <button className={btnPrimary} disabled={open.isPending}
+      onClick={() => open.mutate('audio')}
+      title={`Mở thư mục trên máy tính để nghe: ${data.audio}`}>
+      📂 Mở thư mục nghe audio
+    </button>
+  );
+}
+
 function SongList({ projectId, songs, selected, onSelect, alignMsg, busy }: {
   projectId: number; songs: CoverSong[]; selected: number | null;
   onSelect: (id: number) => void; alignMsg: string; busy: boolean;
@@ -220,6 +235,7 @@ function SongList({ projectId, songs, selected, onSelect, alignMsg, busy }: {
               title="File phụ đề chỉ có lời bài hát, chạy theo từng câu nhạc của bản Mix mới nhất — kéo thả vào CapCut">
               ⬇ Lời cho CapCut (.srt)
             </a>
+            <OpenAudioFolderButton projectId={projectId} />
           </div>
           {(busy || alignMsg) && (
             <p className={`text-xs ${busy ? 'text-blue-300' : 'text-gray-400'}`}>

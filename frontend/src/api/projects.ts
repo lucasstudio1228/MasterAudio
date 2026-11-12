@@ -105,12 +105,31 @@ export function useCreateMixSet() {
       body.append('intro_mode', data.intro_mode ?? 'thumbnail');
       body.append('cast_mode', data.cast_mode ?? 'character_pet');
       body.append('footage_scene_mode', data.footage_scene_mode ?? 'auto');
+      body.append('audio_only', String(data.audio_only ?? false));
       // Track lẻ: mỗi dòng một project riêng (ảnh bìa + video khác nhau).
       return (await api.post<BatchRun>(single ? '/api/projects/singles' : '/api/projects/mixset', body, {
         timeout: 600_000,
       })).data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+  });
+}
+
+/** Thư mục audio đã xong (để nghe) và file video final (nếu đã render). */
+export function useProjectFolders(projectId: number) {
+  return useQuery<{ audio: string | null; video: string | null }>({
+    queryKey: ['project-folders', projectId],
+    queryFn: async () => (await api.get(`/api/projects/${projectId}/folders`)).data,
+    refetchInterval: 15000,
+  });
+}
+
+/** Mở thư mục trên máy tính (File Explorer) — backend chạy ngay trên máy này. */
+export function useOpenProjectFolder(projectId: number) {
+  return useMutation({
+    mutationFn: async (what: 'audio' | 'video') => (await api.post(
+      `/api/projects/${projectId}/open-folder`, null, { params: { what } },
+    )).data as { ok: boolean; path: string },
   });
 }
 

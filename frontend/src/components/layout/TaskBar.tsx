@@ -166,14 +166,22 @@ export default function TaskBar() {
           </div>
         )}
       </div>
-      <div className="mt-1 flex items-center justify-end border-t border-white/5 pt-1">
+      <div className="mt-1 flex items-center justify-end gap-2 border-t border-white/5 pt-1">
         <button
           disabled={controlling || targetProjectId == null}
-          onClick={() => autoRun.mutate(targetProjectId)}
-          title="Giữ phần đã hoàn thành và tự nối từ checkpoint hiện tại đến final + nháp YouTube"
+          onClick={() => autoRun.mutate({ projectId: targetProjectId, audioOnly: true })}
+          title="Chạy tự động CHỈ AUDIO: tải bài → Suno Cover → master (Mix Set thêm bước ghép mix). Không dựng video."
+          className="rounded-md border border-sky-400/40 bg-sky-950/50 px-3 py-1 text-[11px] font-semibold text-sky-100 hover:bg-sky-900/70 disabled:opacity-40"
+        >
+          {autoRun.isPending && autoRun.variables?.audioOnly ? '⏳ Đang kích hoạt…' : '🎧 Auto chỉ audio'}
+        </button>
+        <button
+          disabled={controlling || targetProjectId == null}
+          onClick={() => autoRun.mutate({ projectId: targetProjectId, audioOnly: false })}
+          title="Chạy tự động CẢ AUDIO + VIDEO: giữ phần đã xong, nối từ checkpoint hiện tại đến final + nháp YouTube"
           className="rounded-md border border-violet-400/40 bg-violet-950/50 px-3 py-1 text-[11px] font-semibold text-violet-100 hover:bg-violet-900/70 disabled:opacity-40"
         >
-          {autoRun.isPending ? '⏳ Đang kích hoạt…' : '🚀 Tự động chạy đến cuối'}
+          {autoRun.isPending && !autoRun.variables?.audioOnly ? '⏳ Đang kích hoạt…' : '🚀 Auto audio + video'}
         </button>
       </div>
     </footer>

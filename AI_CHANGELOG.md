@@ -25,3 +25,18 @@
 - **Sau:** Track lẻ giữ đủ 2 bản (cover.wav vị trí 1, cover 2.wav vị trí 2); video, lời .srt và tên bài vẫn theo bản 1. Mix Set không đổi.
 - **Kiểm thử:** `tests.test_cover_singles_batch tests.test_continue_chain tests.test_track_recovery tests.test_suno_semi_manual` → 34 OK. #27 sau khôi phục có 2 CoverSong cùng source 167.
 - **Tồn đọng:** backend 8100 cần restart (hiện không có job) để dùng mã mới (cả bản sửa Remix → Cover). Job dựng video #27 đang ở trạng thái "Đã huỷ" — cần bấm chạy tiếp.
+
+## 2026-11-12 10:45 — Chạy auto 2 kiểu (Audio + Video / Chỉ audio) + nút mở thư mục audio/video trên máy
+
+- **Yêu cầu:** "Chạy auto có 2 kiểu, auto làm cả audio và video. Chạy auto chỉ audio. Sau khi tạo xong audio, lời bài hát sẽ có nút ấn vào thư mục trên máy tính để nghe. Video sau khi render xong cũng vậy, có nút bấm vào thư mục trên máy tính để xem final".
+- **Nguyên nhân:** lô Mix Set/Track lẻ và nút 🚀 luôn chạy tới final.mp4 + nháp YouTube, không có cách dừng ở audio; tool chưa có nút mở thư mục trên máy (chỉ có nút tải file qua trình duyệt).
+- **File đã đổi:**
+  - `backend/batch_service.py`: `create_cover_mixset`/`create_cover_singles` nhận `audio_only` (lưu `params_json.audio_only`, project `auto_video/auto_upload = not audio_only`); hàm mới `_is_audio_only`, `set_audio_only`, `audio_folder`, `_verify_audio`; `_cover_chain` ở chế độ Chỉ audio dừng sau master (Track lẻ) hoặc sau ghép mix không dựng video (Mix Set); `_verify_product` chấm xong theo audio khi lô Chỉ audio.
+  - `backend/routers/projects.py`: form `/mixset`, `/singles` nhận `audio_only`; endpoint mới `GET /api/projects/{id}/folders`, `POST /api/projects/{id}/open-folder?what=audio|video` (mở File Explorer; video chọn sẵn final.mp4).
+  - `backend/routers/tasks.py`: `/api/tasks/auto-run?audio_only=` — đổi chế độ lô có sẵn, Chỉ audio thì không dựng video.
+  - Frontend: `types/index.ts`, `api/projects.ts` (`useProjectFolders`, `useOpenProjectFolder`), `api/tasks.ts`, `TaskBar.tsx` (2 nút «🎧 Auto chỉ audio» / «🚀 Auto audio + video»), `ProjectFormModal.tsx` (chọn «Kiểu chạy auto»), `CoverPanel.tsx` (nút «📂 Mở thư mục nghe audio» ở tab ③ Lời bài hát), `VideoPanel.tsx` (nút «📂 Mở thư mục video final»).
+  - Test mới `tests/test_audio_only_mode.py` (chỉ tool chính).
+- **Trước:** auto luôn làm cả audio + video; muốn nghe/xem phải tự tìm thư mục media.
+- **Sau:** chọn được Audio + Video (mặc định, như cũ) hoặc Chỉ audio khi tạo lô và ở thanh tác vụ; nút mở thư mục chỉ hiện khi đã có audio / final.mp4.
+- **Kiểm thử:** `tests.test_audio_only_mode` + `tests.test_cover_singles_batch` 15 OK; 8 module project/task (gồm `test_tasks_auto`) 64 OK. `npm run build` OK (tool chính, Cover Audio Tool). Kiểm tra trên server thử cổng 8101: nút mở thư mục audio của #27 → POST open-folder 200; nút video final hiện ở #19; form tạo lô hiện lựa chọn Kiểu chạy auto; không tạo lô thật.
+- **Tồn đọng:** backend 8100 phải khởi động lại (khi không có job) mới có endpoint mới — trước đó nút «Auto chỉ audio» gửi tới backend cũ sẽ bị bỏ qua tham số và chạy cả video. Cover Audio Tool (8200) cũng cần khởi động lại.

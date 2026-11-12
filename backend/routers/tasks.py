@@ -247,9 +247,10 @@ def _auto_wait_idle(project_id: int) -> None:
         time.sleep(2)
 
 
-def _auto_worker(project_id: int) -> None:
+def _auto_worker(project_id: int, audio_only: bool = False) -> None:
     """Nối workflow bền vững từ dữ liệu thật: lô cover nếu có, nếu không thì
-    Mix/Video resume. Không xoá hay tạo lại thành quả đã có."""
+    Mix/Video resume. Không xoá hay tạo lại thành quả đã có.
+    audio_only=True: chỉ đi tới audio (cover/master, Mix Set thì thêm mix)."""
     from backend import batch_service
     from backend.job_manager import job_manager
     from backend.routers import mixes
@@ -263,14 +264,16 @@ def _auto_worker(project_id: int) -> None:
             project = session.get(Project, project_id)
             if not project or project.deleted_at:
                 raise RuntimeError(f"Project {project_id} không tồn tại.")
-            project.auto_video = True
-            project.auto_upload = True
+            project.auto_video = not audio_only
+            project.auto_upload = not audio_only
             session.add(project)
             session.commit()
             session.refresh(project)
             batch_key = project.batch_id or ""
             run = (session.exec(select(BatchRun).where(
                 BatchRun.batch_key == batch_key)).first() if batch_key else None)
+        if run:
+            batch_service.set_audio_only(run.batch_key, audio_only)
 
         # Khi bấm Auto từ trạng thái tạm dừng: tiếp tục đúng checkpoint một lần.
         # Nếu người dùng bấm Tạm dừng SAU đó, vòng chờ tôn trọng lệnh và không
@@ -365,7 +368,7 @@ def _auto_worker(project_id: int) -> None:
                     "bài thiếu lời rồi bấm Tự động chạy lại.")
             key = uuid.uuid4().hex
             kind = "cover_singles" if project.kind == "single" else "cover_mixset"
-            params = {"kind": kind, "auto_run": True,
+            params = {"kind": kind, "auto_run": True, "audio_only": audio_only,
                       "music_style": project.music_style,
                       "music_line": project.music_line}
             with Session(engine) as session:
@@ -385,6 +388,20 @@ def _auto_worker(project_id: int) -> None:
 
         if not tracks:
             raise RuntimeError("Project chưa có bài gốc/track để tự động chạy.")
+
+        if audio_only:
+            # Chỉ audio: Track lẻ đã có bản cover là xong; Mix Set ghép mix
+            # (không dựng video vì auto_video đã tắt ở trên).
+            if project.kind != "single" and not any(
+                    m.output_dir and (Path(m.output_dir) / "mix.wav").exists()
+                    for m in mixes_done):
+                mixes.start_mix_for_project(project_id, force_video=False)
+                _auto_update(project_id, status="completed", percent=100.0,
+                             message="Đã khởi động ghép Mix (chế độ Chỉ audio).")
+                return
+            _auto_update(project_id, status="completed", percent=100.0,
+                         message="Audio đã có sẵn — chế độ Chỉ audio không dựng video.")
+            return
 
         # Track lẻ bỏ qua Mix. Mix Set chưa có mix.wav thì render Mix; callback
         # force_video + hai cờ trên sẽ tự nối Video và lưu nháp YouTube.
@@ -414,8 +431,10 @@ def _auto_worker(project_id: int) -> None:
 
 
 @router.post("/auto-run")
-def auto_run(project_id: Optional[int] = None, db: Session = Depends(get_session)):
-    """Từ bất kỳ checkpoint nào, tiếp tục tới final + nháp YouTube.
+def auto_run(project_id: Optional[int] = None, audio_only: bool = False,
+             db: Session = Depends(get_session)):
+    """Từ bất kỳ checkpoint nào, tiếp tục tới final + nháp YouTube
+    (audio_only=True: chỉ tới audio — cover/master, Mix Set thêm bản mix).
 
     project_id được UI lấy từ trang đang mở; nếu đang ở trang khác thì dùng tác
     vụ gần nhất. Chỉ bật một controller cho mỗi project để chống bấm đúp.
@@ -434,12 +453,14 @@ def auto_run(project_id: Optional[int] = None, db: Session = Depends(get_session
         old = _auto_threads.get(project.id)
         if old is not None and old.is_alive():
             return {"ok": True, "project_id": project.id, "status": "already_running"}
-        thread = threading.Thread(target=_auto_worker, args=(project.id,),
+        thread = threading.Thread(target=_auto_worker, args=(project.id, audio_only),
                                   name=f"auto-run-{project.id}", daemon=True)
         _auto_threads[project.id] = thread
         _auto_cancel[project.id] = threading.Event()
         _auto_state[project.id] = {"status": "pending", "percent": 0.0,
-                                   "message": "Đã xếp hàng tự động chạy đến cuối.",
+                                   "message": ("Đã xếp hàng tự động chạy (chỉ audio)."
+                                               if audio_only else
+                                               "Đã xếp hàng tự động chạy đến cuối."),
                                    "error": None}
         thread.start()
     return {"ok": True, "project_id": project.id, "status": "started"}
