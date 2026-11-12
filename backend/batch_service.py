@@ -620,9 +620,14 @@ def _cover_chain(batch_key: str, project_id: int, source_ids: list[int],
         bad = [s.query for s in sources if not s or s.suno_status != "done"]
         if bad:
             raise _StopAll("Một số bài Suno chưa xong: " + "; ".join(bad[:5]))
-        # Mỗi dòng = đúng một bài. Giữ phiên bản đầu; phiên bản thứ hai đưa vào
-        # thùng rác track để vẫn có thể khôi phục thủ công.
-        for src in sources:
+        chain_project = session.get(Project, project_id)
+        keep_all_versions = bool(chain_project and
+                                 getattr(chain_project, "kind", "") == "single")
+        # Track lẻ (12/11/2026, người dùng chọn «Giữ cả 2 bản»): giữ đủ mọi bản
+        # Suno trong project; video dùng bản 1 (chọn tường minh bên dưới).
+        # Mix Set: mỗi dòng = đúng một bài trong mix, nên chỉ giữ phiên bản đầu;
+        # phiên bản thứ hai đưa vào thùng rác track để vẫn khôi phục thủ công.
+        for src in ([] if keep_all_versions else sources):
             songs = session.exec(select(CoverSong).where(
                 CoverSong.source_id == src.id).order_by(CoverSong.position,
                                                         CoverSong.id)).all()
@@ -650,7 +655,8 @@ def _cover_chain(batch_key: str, project_id: int, source_ids: list[int],
         # Track lẻ: tuyệt đối không render Mix một bài. Dùng trực tiếp cover đã
         # master rồi chuyển sang Video; service tự lấy đúng Track/CoverSong.
         from backend.video import service as video_service
-        audio = video_service.find_latest_audio(project_id, project_ctx["name"])
+        audio = _first_cover_audio(source_ids) or video_service.find_latest_audio(
+            project_id, project_ctx["name"])
         if not audio:
             raise RuntimeError("Track lẻ chưa có file cover/master để dựng video.")
         say("Đã đủ cover (bài lẻ) — bản Audio dừng ở đây, không dựng video.")
@@ -683,6 +689,23 @@ def _cover_chain(batch_key: str, project_id: int, source_ids: list[int],
                            f"tài khoản — {acct[:200]}")
         raise RuntimeError(
             f"Chuỗi chưa hoàn tất ({detail}); mở project rồi bấm Tiếp tục.")
+
+
+def _first_cover_audio(source_ids: list[int]) -> Optional[str]:
+    """File của BẢN 1 (vị trí nhỏ nhất) thuộc bài đầu tiên trong lô.
+
+    Track lẻ giữ cả 2 bản Suno; nếu chọn theo mtime thì video có thể lấy
+    ngẫu nhiên bản 2. Luôn dùng bản 1 cho video để kết quả ổn định."""
+    with Session(engine) as session:
+        for sid in source_ids:
+            songs = session.exec(select(CoverSong).where(
+                CoverSong.source_id == sid).order_by(CoverSong.position,
+                                                     CoverSong.id)).all()
+            for song in songs:
+                track = session.get(Track, song.track_id) if song.track_id else None
+                if track and track.filepath and Path(track.filepath).is_file():
+                    return track.filepath
+    return None
 
 
 def _run_cover_mixset(batch_key: str, project_id: int,

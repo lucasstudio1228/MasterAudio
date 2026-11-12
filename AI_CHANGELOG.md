@@ -15,3 +15,13 @@
 - **Sau:** tool tự chờ và bấm lại (tổng tối đa ~2 phút); vẫn không tự điều hướng /create (tránh mất audio nguồn), vẫn không bấm Create.
 - **Kiểm thử:** `tests.test_suno_semi_manual` → 12 OK; 19 module test Suno: 269 test, 16 FAIL/ERROR đều là lỗi có sẵn từ trước (không có lỗi mới). Theo dõi trực tiếp lượt chạy #27: Remix → Cover OK, form Cover đã điền, đang chờ người dùng bấm Create.
 - **Tồn đọng:** backend 8100 phải restart khi KHÔNG có job mới dùng mã mới (hiện đang có job #27). Tempo trong Editor vẫn "không đọc được" lúc Save (đọc được sau ở form: 32 BPM). 16 test Suno lỗi sẵn chưa xử lý.
+
+## 2026-11-12 11:05 — Lô sản xuất Track lẻ giữ cả 2 bản Suno
+
+- **Yêu cầu:** "Tool hiện chỉ nhận 1 bản" → người dùng chọn «Giữ cả 2 bản».
+- **Nguyên nhân:** `_cover_chain` trong `backend/batch_service.py` cố ý giữ bản đầu và đưa bản thứ 2 của mỗi bài vào thùng rác track ("mỗi dòng = đúng một bài"). Project #27 Lưu Niên: Suno tạo/tải/master đủ 2 bản nhưng `Lưu Niên - cover 2.wav` bị chuyển vào thùng rác lúc 10:25.
+- **File đã đổi:** `backend/batch_service.py` (bỏ bước đưa bản 2 vào thùng rác khi project là `single`; Mix Set giữ quy tắc cũ để mix không phát một bài 2 lần; hàm mới `_first_cover_audio` để video Track lẻ luôn dùng bản 1 thay vì file có mtime mới nhất), `tests/test_cover_singles_batch.py` (+`FirstCoverAudioTests`). Cover Audio Tool + GitHub MasterAudio: cùng sửa `batch_service.py`. Dữ liệu: khôi phục `Lưu Niên - cover 2.wav` vào #27 bằng API `POST /api/projects/27/tracks/recovery/restore` (trash id 48).
+- **Trước:** Track lẻ chạy theo lô chỉ còn 1 bản trong project; bản 2 nằm trong thùng rác.
+- **Sau:** Track lẻ giữ đủ 2 bản (cover.wav vị trí 1, cover 2.wav vị trí 2); video, lời .srt và tên bài vẫn theo bản 1. Mix Set không đổi.
+- **Kiểm thử:** `tests.test_cover_singles_batch tests.test_continue_chain tests.test_track_recovery tests.test_suno_semi_manual` → 34 OK. #27 sau khôi phục có 2 CoverSong cùng source 167.
+- **Tồn đọng:** backend 8100 cần restart (hiện không có job) để dùng mã mới (cả bản sửa Remix → Cover). Job dựng video #27 đang ở trạng thái "Đã huỷ" — cần bấm chạy tiếp.
