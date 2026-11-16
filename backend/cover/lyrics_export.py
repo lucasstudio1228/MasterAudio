@@ -24,6 +24,23 @@ from .lyrics import load_lines
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "app.db"
 LINE_HOLD_SEC = 2.0     # giống overlay.LINE_HOLD_SEC
 MIN_LINE_SEC = 0.3      # câu quá ngắn (bị cắt ở vùng crossfade) thì bỏ
+MAX_WORDS_PER_LINE = 8  # câu dài → xuống dòng, mỗi dòng tối đa 8 từ
+
+
+def wrap_lyric(text: str, max_words: int = MAX_WORDS_PER_LINE) -> list[str]:
+    """Chia câu dài thành các dòng tối đa `max_words` từ, chia đều giữa các dòng
+    (vd 10 từ → 5 + 5, 9 từ → 5 + 4) để không có dòng cuối lẻ loi 1-2 từ."""
+    words = (text or "").split()
+    if len(words) <= max_words:
+        return [" ".join(words)] if words else []
+    n = -(-len(words) // max_words)
+    base, extra = divmod(len(words), n)
+    out, i = [], 0
+    for k in range(n):
+        size = base + (1 if k < extra else 0)
+        out.append(" ".join(words[i:i + size]))
+        i += size
+    return out
 
 
 def _segments(info: dict, total: float) -> list[dict]:
@@ -91,7 +108,8 @@ def _srt_ts(t: float) -> str:
 def build_srt(timeline: list[tuple[float, float, str]]) -> str:
     blocks = []
     for n, (t0, t1, text) in enumerate(timeline, 1):
-        blocks.append(f"{n}\n{_srt_ts(t0)} --> {_srt_ts(t1)}\n{text}\n")
+        body = "\n".join(wrap_lyric(text)) or text
+        blocks.append(f"{n}\n{_srt_ts(t0)} --> {_srt_ts(t1)}\n{body}\n")
     return "\n".join(blocks)
 
 

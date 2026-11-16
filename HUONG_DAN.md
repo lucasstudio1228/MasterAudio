@@ -134,6 +134,10 @@ mỗi bản có nút **Lời .srt (CapCut)**.
   - **`<tên project>.srt`** — **lời cho CapCut**: chỉ có lời, mỗi câu hiện đúng lúc được hát.
 - Trong **CapCut**: kéo file `.wav` vào, rồi kéo file `.srt` vào (hoặc **Văn bản → Nhập phụ đề /
   Captions → Import**) — lời tự khớp theo nhạc, chỉ cần chọn font/màu.
+- Câu dài trong file `.srt` được tự **xuống dòng, mỗi dòng tối đa 8 từ** (chia đều, vd 10 từ →
+  5 + 5). File `.srt` không lưu được khoảng cách dòng, nên trong CapCut chọn phụ đề → **Văn bản →
+  Cơ bản → Khoảng cách dòng (Line spacing)** → tăng thêm cho thoáng (vd +1), rồi bấm **Áp dụng
+  cho tất cả** để mọi câu giống nhau.
 - Bản mix gốc kèm thông tin chi tiết: `outputs\<số project>\<số mix>\`.
 
 ## Khi có trục trặc

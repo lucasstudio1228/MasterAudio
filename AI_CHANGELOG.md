@@ -112,3 +112,13 @@
 - **Kiểm thử:** parser 7/7 PASS (xlsx có STT + tiêu đề, xlsx 1 cột inlineStr, CSV `;`, txt gạch đầu dòng, .doc giả lập, .xls báo lời khuyên, đuôi lạ). API trên bản sao cổng 8299 DB trống: ALL PASS (from-list mixset/single, lỗi 422, `/api/tasks/active` rỗng, nhập 2 bản WAV + auto_master → master xong cả 2, .srt 404 trước khi căn, đúng sau khi lưu lời, không có tên bài). UI trong trình duyệt: form 4 kiểu, kiểu cover có sẵn chuyển sang `?tab=suno&drop=1`, kéo thả giả lập gom đúng 2 bản + lời, nhập + master xong, tab ③ có ⬇ .srt; Track lẻ chưa chạy hiện «Chưa bắt đầu».
 - **Kết quả:** đạt; đã đồng bộ sang bản 8200 (`D:\Tools\Cover nhạc\Cover Audio Tool`).
 - **Tồn đọng:** `.xls` cần thư viện xlrd (không có thì báo lưu .xlsx); `.doc` chỉ đọc best-effort; bản 8200 chưa chạy `setup_app.ps1` nên vẫn còn `CoverAudioTool.exe` cũ tới lần update/install sau; AI căn lời khi nhập chưa chạy thử thật (chỉ thử master). Tool chính 8100 không đổi.
+
+## 2026-11-17 — Lời .srt: câu dài xuống dòng, tối đa 8 từ/dòng
+
+- **Yêu cầu:** "phần lyrics đang hiện cả câu dài trên 1 dòng. Sửa chỉ để 8 từ trên 1 dòng, khoảng cách các dòng +1 (không được xít nhau quá)".
+- **Nguyên nhân:** `build_srt` ghi nguyên câu trên 1 dòng → trong CapCut câu dài chạy tràn ngang.
+- **File đã đổi:** `backend/cover/lyrics_export.py` (mới `wrap_lyric()` + `MAX_WORDS_PER_LINE = 8`; `build_srt` xuống dòng trong từng phụ đề), `HUONG_DAN.md` (cách tăng khoảng cách dòng trong CapCut), `AI_CHANGELOG.md`.
+- **Trước:** mỗi phụ đề 1 dòng dài. **Sau:** câu > 8 từ chia đều thành nhiều dòng ≤ 8 từ (10 từ → 5 + 5, 11 → 6 + 5); áp dụng cho .srt bản mix và .srt từng bài. Mốc thời gian không đổi.
+- **Kiểm thử:** `wrap_lyric` với câu 4/9/16/0 từ; `build_srt` câu 10 và 11 từ ra 2 dòng đúng; test API (.srt từng bài) PASS trên bản sao.
+- **Kết quả:** đạt; đã chép sang bản 8200.
+- **Tồn đọng:** SRT không mang được khoảng cách dòng — người dùng chỉnh «Khoảng cách dòng» trong CapCut (đã ghi trong HUONG_DAN).
