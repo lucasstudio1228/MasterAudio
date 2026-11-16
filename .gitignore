@@ -57,3 +57,6 @@ tests/_run_*.py
 
 # Ban sao luu tao boi update.bat
 /_ban_cu_truoc_cap_nhat/
+
+# File .exe mo tool (tu tao khi cai / cap nhat)
+/*.exe

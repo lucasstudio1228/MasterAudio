@@ -98,11 +98,11 @@ Dùng khi bạn đã cài tool rồi và muốn lấy bản mới nhất trên G
   ```
 
 **Mỗi lần cập nhật:**
-1. Chờ các việc đang chạy (Suno, mix…) xong, rồi **đóng cửa sổ `start.bat`** (Mac: cửa sổ
+1. Chờ các việc đang chạy (Suno, mix…) xong, rồi **đóng tool** (cửa sổ ứng dụng hoặc cửa sổ `start.bat`; Mac: cửa sổ
    `start_mac.command`). Tool đang mở thì file cập nhật sẽ dừng và nhắc bạn đóng.
 2. Bấm đúp **`update.bat`** (Mac: **`update_mac.command`**) → chờ chữ **CẬP NHẬT XONG**
    (CAP NHAT XONG).
-3. Bấm **`start.bat`** như mọi ngày.
+3. Mở tool như mọi ngày (lối tắt **Cover Audio Tool** ngoài Desktop — tự tạo khi cập nhật).
 
 File cập nhật tự làm: tải bản mới từ GitHub → chép đè phần mã → xoá file cũ không còn dùng →
 cài thêm thư viện nếu bản mới cần. Mã cũ được cất trong thư mục `_ban_cu_truoc_cap_nhat\`
@@ -110,7 +110,7 @@ cài thêm thư viện nếu bản mới cần. Mã cũ được cất trong th�
 
 ## Sử dụng hằng ngày
 
-1. Bấm đúp **`start.bat`** (Mac: **`start_mac.command`**). Trình duyệt tự mở **http://localhost:8200**.
+1. Bấm đúp **Cover Audio Tool** ngoài Desktop (hoặc `CoverAudioTool.exe` trong thư mục tool) → tool mở trong cửa sổ riêng. Vẫn có thể dùng **`start.bat`** như cũ (trình duyệt mở **http://localhost:8200**). Mac: **`start_mac.command`**.
 2. Lần đầu: bấm **⚙ Settings** →
    - **Đăng nhập Suno** và **nhaccuatui** (mỗi người tự đăng nhập tài khoản của mình).
    - Dán **API Key** của mình nếu dùng AI (địa chỉ API và model đã điền sẵn).
@@ -166,3 +166,13 @@ model đã điền sẵn trong mã).
   thêm bước ghép mix).
 - Tạo lô Mix Set / Track lẻ không còn ô chọn kênh YouTube, style ảnh, intro, nội dung video.
 - Dữ liệu project cũ vẫn mở bình thường. Cập nhật từ bản cũ: xem mục **Cập nhật lên bản mới**.
+
+## Mở tool bằng cửa sổ ứng dụng (.exe) — không cần trình duyệt
+
+- Bấm đúp **`CoverAudioTool.exe`** trong thư mục tool (hoặc lối tắt **Cover Audio Tool** ngoài Desktop).
+- Tool mở trong **cửa sổ riêng** (có icon tai nghe trên thanh taskbar), không còn cửa sổ đen và tab trình duyệt.
+- **Đóng cửa sổ = tắt tool.** Nếu đang có việc chạy (Suno, mix…), tool hỏi lại trước khi đóng.
+- Nút ⬇ tải file vẫn hiện hộp chọn nơi lưu; link ngoài (nhaccuatui…) mở bằng trình duyệt.
+- `start.bat` vẫn dùng được như cũ. Nếu đã mở bằng `start.bat` rồi bấm `.exe`, cửa sổ chỉ hiện giao diện; đóng cửa sổ không tắt server của `start.bat`.
+- Lần đầu máy chưa có thư viện cửa sổ, tool hỏi để tự cài (cần mạng). Mất file `.exe` thì chạy lại `update.bat` (hoặc `launcher_exe\build_exe.bat CoverAudioTool`) để tạo lại.
+- Nhật ký server khi mở bằng cửa sổ: `data\logs\app_server.log`.

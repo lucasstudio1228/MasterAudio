@@ -60,4 +60,10 @@ $py = Join-Path $Dst '.venv\Scripts\python.exe'
 & $py -m pip install -q -r (Join-Path $Dst 'requirements.txt')
 if ($LASTEXITCODE -ne 0) { throw "pip install loi ($LASTEXITCODE)" }
 }
+
+# 7) File .exe mo tool trong cua so ung dung + loi tat Desktop (loi o day khong chan cap nhat).
+$setup = Join-Path $Dst 'launcher_exe\setup_app.ps1'
+if (Test-Path -LiteralPath $setup) {
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $setup -Dir $Dst
+}
 exit 0

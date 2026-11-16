@@ -69,3 +69,17 @@
 - **Sau:** chỉ còn audio (4 bước); bấm đúp `update.bat` (Mac `update_mac.command`) để tải bản mới, sao lưu mã cũ vào `_ban_cu_truoc_cap_nhat`, chép đè mã, xoá file video cũ, giữ `.venv`, `data` (chỉ thêm file thiếu), media, outputs, đăng nhập, `.env`; pip chỉ chạy khi `requirements.txt` đổi. Tool đang chạy (cổng 8200) thì dừng, không cập nhật.
 - **Kiểm thử:** `npm run build` OK. Thử `apply_update.ps1` trên bản sao 4beac96 có dữ liệu giả: xoá đúng 38 file, giữ setting/app.db/.env/media, chạy lần 2 xoá 0 file và bỏ qua pip. Server thử cổng 8299: 129 API, không còn đường dẫn video; giao diện 4 tab, không lỗi console. `update.bat`: tự chép ra TEMP, đường dẫn tiếng Việt, kiểm tra cổng, tải + giải nén OK. `bash -n update_mac.command` OK (chưa chạy thật trên Mac).
 - **Tồn đọng:** chạy thử `update.bat` đầu-cuối sau khi đẩy lên GitHub; `update_mac.command` chưa thử trên máy Mac thật. Tool chính 8100 không đổi.
+
+## 2026-11-16 17:45 — Mở tool bằng cửa sổ ứng dụng .exe (thay trình duyệt localhost)
+
+- **Yêu cầu:** "Đưa giao diện về ứng dụng .exe thay vì chạy trên trình duyệt local host" + "đưa lên" GitHub.
+- **Nguyên nhân:** `start.bat` mở cửa sổ đen + tab trình duyệt; đóng nhầm dễ rối.
+- **File đã đổi:**
+  - Mới `app_window.py`: cửa sổ pywebview (Edge WebView2 có sẵn trên Windows 10/11); tự bật server ẩn trên cổng đọc từ `start.bat`, chờ sẵn sàng rồi nạp giao diện; đóng cửa sổ thì tắt cả cây tiến trình server; đang có việc thì hỏi lại; server đã mở bằng start.bat thì chỉ gắn vào, không tắt; giữ localStorage ở `data/webview`; cho phép tải file; link ngoài mở trình duyệt; tự hỏi cài pywebview nếu thiếu; icon riêng trên taskbar.
+  - Mới `launcher_exe/`: `Launcher.cs` (exe ~29 KB, build bằng csc có sẵn của Windows, tìm `.venv` cạnh exe hoặc thư mục cha), `build_exe.bat`, `setup_app.ps1` (tạo `CoverAudioTool.exe` + lối tắt Desktop «Cover Audio Tool», dùng IShellLinkW để giữ đường dẫn có dấu; lỗi không chặn cài đặt), `app.ico`, `make_icon.py`.
+  - `install.bat`, `patch/apply_update.ps1` (bước 7): gọi `setup_app.ps1`. `update.bat`: thông báo mở bằng lối tắt Desktop.
+  - `requirements.txt`: `pywebview>=6,<7; sys_platform == "win32"` (Mac bỏ qua). `.gitignore`: `/*.exe` (exe tự tạo trên máy, không đưa lên repo để tránh cảnh báo SmartScreen).
+  - `README.md`, `HUONG_DAN.md`: mục «Mở tool bằng cửa sổ ứng dụng», sửa hướng dẫn sử dụng hằng ngày/cập nhật.
+- **Trước:** start.bat + trình duyệt. **Sau:** lối tắt Desktop / CoverAudioTool.exe mở cửa sổ ứng dụng; start.bat vẫn dùng được. Mac không đổi (vẫn trình duyệt).
+- **Kiểm thử:** bản sao 8299 DB trống: exe mở cửa sổ phóng to, server sẵn sàng ~3 giây, đóng cửa sổ thì server + tiến trình con tắt hết; kiểm tra logic đóng (đang có việc + Huỷ/OK, rảnh, server mở sẵn) đúng. Cập nhật bản b1cf6bb trong thư mục có dấu bằng `apply_update.ps1` mới: tự tạo exe + lối tắt, mở qua lối tắt OK, app.db giữ nguyên.
+- **Tồn đọng:** chưa thử `install.bat` trên máy sạch; chưa thử nút tải file thật trong cửa sổ; máy chưa có WebView2 (Windows cũ) sẽ báo lỗi — dùng start.bat.

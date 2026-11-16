@@ -67,7 +67,8 @@ if errorlevel 1 (
 rmdir /s /q "%WORK%" >nul 2>&1
 echo.
 echo ============================================================
-echo   CAP NHAT XONG! Bam start.bat de mo lai Cover Audio Tool.
+echo   CAP NHAT XONG! Bam dup "Cover Audio Tool" ngoai Desktop
+echo   (hoac CoverAudioTool.exe / start.bat) de mo lai tool.
 echo ============================================================
 echo.
 pause
