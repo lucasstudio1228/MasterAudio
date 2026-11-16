@@ -83,3 +83,13 @@
 - **Trước:** start.bat + trình duyệt. **Sau:** lối tắt Desktop / CoverAudioTool.exe mở cửa sổ ứng dụng; start.bat vẫn dùng được. Mac không đổi (vẫn trình duyệt).
 - **Kiểm thử:** bản sao 8299 DB trống: exe mở cửa sổ phóng to, server sẵn sàng ~3 giây, đóng cửa sổ thì server + tiến trình con tắt hết; kiểm tra logic đóng (đang có việc + Huỷ/OK, rảnh, server mở sẵn) đúng. Cập nhật bản b1cf6bb trong thư mục có dấu bằng `apply_update.ps1` mới: tự tạo exe + lối tắt, mở qua lối tắt OK, app.db giữ nguyên.
 - **Tồn đọng:** chưa thử `install.bat` trên máy sạch; chưa thử nút tải file thật trong cửa sổ; máy chưa có WebView2 (Windows cũ) sẽ báo lỗi — dùng start.bat.
+
+## 2026-11-16 18:30 — Viết lại hướng dẫn GitHub cho bản mới (README + HUONG_DAN)
+- **Yêu cầu:** viết lại hướng dẫn trên GitHub cho phù hợp phiên bản mới.
+- **Nguyên nhân:** hai file hướng dẫn chắp vá nhiều mục có ngày (12/11, 16/11), trùng nội dung nhau, còn mục lỗi thời («Chạy auto: 2 kiểu», «Bản không còn phần video» như nhật ký thay đổi).
+- **File đã đổi:** `README.md`, `HUONG_DAN.md`, `AI_CHANGELOG.md`.
+- **Trước:** README và HUONG_DAN gần giống hệt nhau, thông tin cửa sổ .exe nằm ở cuối, dòng «data\app.db có sẵn» sai (repo không kèm app.db).
+- **Sau:** README = giới thiệu 4 bước + tải về + cài Windows (exe, lối tắt Desktop) + mở/đóng tool + cập nhật bằng update.bat + bảng lỗi Windows + cài Mac (chip M/Intel, bảng lỗi Mac) + dữ liệu & chia sẻ + lưu ý lyrics. HUONG_DAN = cách dùng hằng ngày: mở/đóng, tạo project (thủ công / Mix Set / Track lẻ), nút 🎧 Chạy tự động + Tạm dừng/Tiếp tục/Dừng lại, chi tiết ①–④ (quy trình Suno Cover, thùng rác), file nhạc + CapCut, bảng trục trặc. Bỏ các mục có ngày và mục lỗi thời.
+- **Kiểm thử:** đối chiếu nhãn giao diện với mã (tên tab, + New Project, 3 kiểu tạo project, nút TaskBar, 🗑/♻, 📂 Mở thư mục nghe audio, ⬇ Lời cho CapCut, Mix History, Settings), install.bat/update.bat/apply_update.ps1/app_window.py; kiểm tra tệp UTF-8, không có ký tự điều khiển.
+- **Kết quả:** chỉ đổi tài liệu, không đổi mã.
+- **Tồn đọng:** không.

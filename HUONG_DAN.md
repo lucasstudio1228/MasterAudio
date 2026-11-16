@@ -1,195 +1,94 @@
-# Cover Audio Tool — Hướng dẫn nhanh
+# Cover Audio Tool — Hướng dẫn sử dụng
 
-Tool làm phần **âm thanh** cho nhạc cover, tách ra từ tool "Cover nhạc" (2026-11-10).
-Gồm 4 bước, giữ nguyên mọi setting đang dùng:
+Hướng dẫn **dùng tool hằng ngày**. Cách tải, cài đặt, cập nhật và sửa lỗi cài đặt: xem
+**[README.md](README.md)**.
 
-1. **① Tải nhạc gốc** — tìm và tải bài gốc + lời (nhaccuatui / YouTube Music).
-2. **② Suno Cover** — tạo bản cover bằng Suno (tempo, style, master giữ nguyên như tool chính).
-3. **③ Lời bài hát** — kiểm tra / căn lời.
-4. **④ Mix** — cân âm lượng, ghép các bài thành 1 bản mix.
+## Mở và đóng tool
 
-Không có phần dựng video và đăng YouTube.
+- **Mở:** bấm đúp **Cover Audio Tool** ngoài Desktop (hoặc `CoverAudioTool.exe` trong thư mục
+  tool). Tool hiện trong cửa sổ riêng, chờ vài giây cho tool khởi động.
+  Mac: bấm đúp `start_mac.command` → trình duyệt mở http://localhost:8200.
+- **Đóng:** bấm dấu ✕ của cửa sổ = **tắt tool**. Nếu đang có việc chạy (Suno, mix…), tool hỏi
+  lại — chọn **Cancel** để giữ tool chạy tiếp.
+- Nút **⬇** tải file vẫn hiện hộp chọn nơi lưu; link ngoài (nhaccuatui…) mở bằng trình duyệt.
+- Vẫn dùng được `start.bat` như cũ. Nếu đã mở bằng `start.bat` rồi bấm thêm file `.exe`, cửa
+  sổ chỉ hiện giao diện (tên cửa sổ có chữ *"đã mở sẵn"*); đóng cửa sổ không tắt `start.bat`.
 
-## Cài đặt trên Windows (chỉ làm 1 lần)
+**Lần đầu:** bấm **⚙ Settings** → đăng nhập **Suno** và **nhaccuatui**, dán **API Key** nếu
+dùng AI.
 
-Máy cần có sẵn:
-- **Python 3.11** (khi cài nhớ tick "Add Python to PATH") — https://www.python.org/downloads/
-- **ffmpeg** — mở PowerShell gõ: `winget install Gyan.FFmpeg`
-- **Google Chrome** (dùng để mở Suno).
+## Tạo project
 
-Sau đó bấm đúp **`install.bat`** và chờ cài xong (lần đầu có thể mất 10–20 phút).
+Bấm **+ New Project**, chọn 1 trong 3 kiểu:
 
-## Cài đặt trên Mac (macOS) — dùng chung cho chip M và chip Intel
+| Kiểu | Dùng khi | Tool làm gì |
+|---|---|---|
+| ✍️ **Tạo 1 project thủ công** | Muốn tự làm từng bước | Chỉ tạo project, bạn tự bấm ① → ④ |
+| 🎼 **Mix Set** | Nhiều bài ghép thành 1 bản mix dài | Mỗi bài: tải gốc → tempo 4.5× → Suno Cover → master, cuối cùng ghép mix |
+| 🎵 **Track lẻ** | Mỗi bài là 1 project riêng | Mỗi bài: tải gốc → tempo 4.5× → Suno Cover → master. Bài lỗi thì bỏ qua, làm bài sau |
 
-**Xem máy mình chip gì:** bấm **logo quả táo** (góc trên bên trái màn hình) → **Giới thiệu về máy Mac này
-(About This Mac)**:
-- Ghi **"Chip: Apple M1/M2/M3/M4…"** → Mac chip M.
-- Ghi **"Bộ xử lý (Processor): … Intel Core i5/i7/i9…"** → Mac chip Intel (xem thêm mục
-  *Mac chip Intel* bên dưới).
+Mix Set và Track lẻ nhận **file danh sách bài** (`.txt` hoặc `.docx`), mỗi dòng 1 bài dạng
+**Tên bài - Ca sĩ** (hoặc **Ca sĩ - Tên bài**). Project nằm trong thư mục `media\Mix Set\` hoặc
+`media\Track lẻ\`.
 
-Không cần chọn gì: **`install_mac.command` tự nhận ra loại chip** và cài đúng bộ thư viện.
+**Nút 🎧 Chạy tự động** (thanh dưới cùng): cho project đang mở chạy tiếp tự động — tải bài →
+Suno Cover → master (Mix Set thêm bước ghép mix). Dùng khi project thủ công đã sẵn sàng hoặc
+khi muốn chạy lại phần còn dở.
 
-1. Mở ứng dụng **Terminal** (Cmd + Space → gõ "Terminal").
-2. Cài **Homebrew** nếu chưa có (dán lệnh ở https://brew.sh vào Terminal, Enter).
-3. Dán lệnh sau vào Terminal rồi Enter:
-   ```bash
-   brew install python@3.11 ffmpeg
-   ```
-4. Cài **Google Chrome** (dùng để mở Suno; không có Chrome thì tool tự dùng Chromium).
-5. Trong thư mục tool, bấm đúp **`install_mac.command`** và chờ cài xong.
-   - Nếu Mac báo *"không thể mở vì từ nhà phát triển không xác định"*: **chuột phải** vào file →
-     **Open (Mở)** → **Open** lần nữa. Chỉ cần làm 1 lần cho mỗi file.
-   - Nếu báo *"không có quyền"*: mở Terminal, gõ `chmod +x ` (có dấu cách), kéo thả thư mục
-     tool vào, xoá dấu `/` cuối rồi thêm `/*.command`, Enter. Ví dụ:
-     ```bash
-     chmod +x ~/Downloads/MasterAudio-main/*.command
-     ```
-6. Hằng ngày: bấm đúp **`start_mac.command`** → trình duyệt tự mở **http://localhost:8200**.
+Khi đang chạy, thanh dưới cùng có thêm **⏸ Tạm dừng**, **▶ Tiếp tục** và **⏹ Dừng lại**
+(dừng tất cả; phần đã làm được giữ lại để Tiếp tục sau). Bấm vào một việc đang chạy để nhảy tới
+đúng project / tab của việc đó.
 
-Mac chip M1/M2/M3 chạy được nhưng tách giọng (Demucs) sẽ chậm hơn máy Windows có card NVIDIA.
+## 4 bước trong mỗi project
 
-### Mac chip Intel
+### ① Tải nhạc gốc
+Tìm và tải bài gốc + lời (nhaccuatui / YouTube Music). Tool đặt sẵn tempo **4.5×** cho bản dùng
+để cover.
 
-- **Yêu cầu:** macOS 12 (Monterey) trở lên, RAM từ 8 GB (khuyên 16 GB), trống ổ đĩa ~10 GB.
-- Cài giống hệt các bước trên. Khi chạy `install_mac.command`, cửa sổ sẽ ghi
-  *"May Mac chip INTEL (x86_64)"* — tool tự dùng **PyTorch 2.2.2** (bản cuối cùng còn hỗ trợ
-  Mac Intel) và các thư viện tương thích trong file `constraints-mac-intel.txt`.
-  Lần cài đầu có thể mất **10–20 phút**.
-- Cài xong, cửa sổ phải hiện dòng **`OK: torch 2.2.2 - numpy 1.26.4`**. Nếu thấy
-  *[CANH BAO]* / *[LOI]* thì chụp màn hình gửi người hỗ trợ.
-- **Tốc độ:** Mac Intel chỉ chạy AI bằng CPU nên bước **③ Lời bài hát** (AI nghe lời) và tách
-  giọng **chậm hơn nhiều** (có thể vài phút mỗi bài). ① Tải nhạc, ② Suno Cover, ④ Mix chạy bình
-  thường. Nên cắm sạc và để máy không ngủ khi đang chạy.
-- **macOS cũ (Homebrew báo không hỗ trợ):**
-  - Python: tải bản **Python 3.11 "macOS 64-bit universal2 installer"** ở
-    https://www.python.org/downloads/macos/ rồi cài như phần mềm bình thường.
-  - ffmpeg: tải file **ffmpeg** ở https://evermeet.cx/ffmpeg/ , giải nén, rồi mở Terminal gõ
-    (kéo thả file ffmpeg vào chỗ đường dẫn):
-    ```bash
-    sudo mkdir -p /usr/local/bin && sudo cp ~/Downloads/ffmpeg /usr/local/bin/ && sudo chmod +x /usr/local/bin/ffmpeg
-    ```
-    (Lệnh `sudo` sẽ hỏi mật khẩu máy Mac — người dùng tự gõ.)
-  - Sau đó bấm đúp `install_mac.command` như bình thường.
+### ② Suno Cover — quy trình chuẩn (bán thủ công)
 
-### Lỗi thường gặp trên Mac
+1. **Tool:** chuẩn hoá lời + soạn Styles, upload bản tempo lên Suno, mở **Suno Editor**.
+2. **Bạn:** trong Editor chỉnh **Tempo** (tool gợi ý số, vd 32) → bấm **Save as New Song**.
+3. **Tool:** tự nhận bài vừa lưu, mở trang bài → **⋯ → Remix → Cover**. Nếu Suno còn đang xử lý,
+   tool tự chờ rồi bấm lại (tối đa 3 lần, ~2 phút).
+4. **Tool:** điền form Cover — lời, Styles, Max Mode, thanh trượt (Weirdness 10, Style
+   Influence 75, Audio Influence 50).
+5. **Bạn:** xem lại form trong cửa sổ Suno rồi **tự bấm Create** (tool không bao giờ tự bấm).
+6. **Tool:** nhận 2 bản Suno tạo ra, tải về, master, chuyển sang bài tiếp theo.
 
-| Hiện tượng | Cách xử lý |
-|---|---|
-| Bấm đúp file `.command` mở ra trình soạn thảo chữ | Chuột phải → **Open With (Mở bằng)** → **Terminal** |
-| "Không tìm thấy Python 3.11" | Cài lại Python 3.11 (Homebrew hoặc python.org), đóng Terminal, chạy lại |
-| "Không tìm thấy ffmpeg" | `brew install ffmpeg` (hoặc cách thủ công ở trên) |
-| Trình duyệt không tự mở | Tự mở Chrome/Safari, vào http://localhost:8200 |
-| Muốn cài lại từ đầu | Xoá thư mục ẩn `.venv` trong thư mục tool (Cmd + Shift + . để hiện file ẩn), chạy lại `install_mac.command` |
+**Bỏ bớt bản không dùng (thùng rác):**
+- Mỗi bản cover có nút **🗑 Xoá bản này** → bản đó vào thùng rác, không còn dùng để master /
+  ghép mix. **File trên máy không bị xoá.**
+- Dưới mỗi bài có **🗑 Thùng rác (N)**: mở ra để nghe thử và **♻ Khôi phục** từng bản (hoặc
+  **♻ Khôi phục tất cả**).
 
-## Cập nhật lên bản mới (KHÔNG cần xoá bản cũ, không mất dữ liệu)
+**Bài bị Suno báo bản quyền:** tool đánh dấu bài `rejected`, giữ dữ liệu và chuyển sang bài
+sau. Tool **không** sửa méo lời để né bộ lọc — lời gửi lên Suno luôn là chữ tự nhiên, không có
+dòng tên bài / ca sĩ.
 
-Dùng khi bạn đã cài tool rồi và muốn lấy bản mới nhất trên GitHub. Project, nhạc, setting,
-đăng nhập Suno/nhaccuatui và API key **được giữ nguyên**.
+### ③ Lời bài hát
+- Kiểm tra / căn lời theo bản cover (AI nghe lời).
+- Nút **📂 Mở thư mục nghe audio**: mở thư mục nhạc đã xong trên máy để nghe thử.
+- Nút **⬇ Lời cho CapCut (.srt)**: tải file lời để đưa vào CapCut.
 
-**Lần đầu tiên** (bản cũ chưa có file cập nhật):
-- Windows: mở link https://raw.githubusercontent.com/lucasstudio1228/MasterAudio/main/update.bat
-  → chuột phải → **Lưu thành (Save as)** → lưu vào **thư mục tool** (cạnh `start.bat`), tên
-  `update.bat`.
-- Mac: mở link https://raw.githubusercontent.com/lucasstudio1228/MasterAudio/main/update_mac.command
-  → **Lưu thành** vào thư mục tool, tên `update_mac.command`. Rồi mở Terminal dán lệnh (thay
-  đường dẫn bằng thư mục tool của bạn):
-  ```bash
-  chmod +x ~/Downloads/MasterAudio-main/update_mac.command
-  ```
-
-**Mỗi lần cập nhật:**
-1. Chờ các việc đang chạy (Suno, mix…) xong, rồi **đóng tool** (cửa sổ ứng dụng hoặc cửa sổ `start.bat`; Mac: cửa sổ
-   `start_mac.command`). Tool đang mở thì file cập nhật sẽ dừng và nhắc bạn đóng.
-2. Bấm đúp **`update.bat`** (Mac: **`update_mac.command`**) → chờ chữ **CẬP NHẬT XONG**
-   (CAP NHAT XONG).
-3. Mở tool như mọi ngày (lối tắt **Cover Audio Tool** ngoài Desktop — tự tạo khi cập nhật).
-
-File cập nhật tự làm: tải bản mới từ GitHub → chép đè phần mã → xoá file cũ không còn dùng →
-cài thêm thư viện nếu bản mới cần. Mã cũ được cất trong thư mục `_ban_cu_truoc_cap_nhat\`
-(xoá đi cũng được khi tool chạy ổn).
-
-## Sử dụng hằng ngày
-
-1. Bấm đúp **Cover Audio Tool** ngoài Desktop (hoặc `CoverAudioTool.exe` trong thư mục tool) → tool mở trong cửa sổ riêng. Vẫn có thể dùng **`start.bat`** như cũ (trình duyệt mở **http://localhost:8200**). Mac: **`start_mac.command`**.
-2. Lần đầu: bấm **⚙ Settings** →
-   - **Đăng nhập Suno** và **nhaccuatui** (mỗi người tự đăng nhập tài khoản của mình).
-   - Dán **API Key** của mình nếu dùng AI (địa chỉ API và model đã điền sẵn).
-3. Tạo project mới → làm lần lượt ① → ② → ③ → ④.
-
-Tool chạy cổng **8200** nên dùng song song được với tool Cover nhạc đầy đủ (cổng 8100).
+### ④ Mix (chỉ project Mix Set)
+Cân âm lượng và ghép các bài thành 1 bản mix dài. Các bản đã mix hiện trong **Mix History**,
+mỗi bản có nút **Lời .srt (CapCut)**.
 
 ## File nhạc nằm ở đâu?
 
-- Mỗi project có thư mục **`media\...\<tên project>\nhac_mix\`** chứa **đúng 1 file nhạc
-  đã mix** (`<tên project>.wav`). Mix lại thì file này được thay bằng bản mới nhất.
-- Cùng thư mục có **`<tên project>.srt`** — **lời bài hát cho CapCut**: chỉ có lời, mỗi câu
-  hiện đúng lúc câu đó được hát trong bản mix (không có tên bài, ca sĩ hay chữ nào khác).
-  Trong CapCut: kéo file nhạc `.wav` vào, rồi kéo luôn file `.srt` vào (hoặc **Văn bản → Nhập
-  phụ đề / Captions → Import**) — lời tự khớp theo nhạc, chỉ cần chọn font/màu cho đẹp.
-- Tải lại file lời bất cứ lúc nào: tab **③ Lời bài hát** → nút **⬇ Lời cho CapCut (.srt)**,
-  hoặc nút **Lời .srt (CapCut)** cạnh từng bản trong *Mix History*.
-- Bản mix gốc kèm thông tin chi tiết nằm trong `outputs\<số project>\<số mix>\`.
+- Mỗi project có thư mục **`media\...\<tên project>\nhac_mix\`** chứa:
+  - **`<tên project>.wav`** — đúng 1 file nhạc đã mix (mix lại thì được thay bằng bản mới nhất).
+  - **`<tên project>.srt`** — **lời cho CapCut**: chỉ có lời, mỗi câu hiện đúng lúc được hát.
+- Trong **CapCut**: kéo file `.wav` vào, rồi kéo file `.srt` vào (hoặc **Văn bản → Nhập phụ đề /
+  Captions → Import**) — lời tự khớp theo nhạc, chỉ cần chọn font/màu.
+- Bản mix gốc kèm thông tin chi tiết: `outputs\<số project>\<số mix>\`.
 
-## Setting đã giữ sẵn
+## Khi có trục trặc
 
-- `data\master_config.json` — thông số master (EQ, compressor, LUFS…).
-- `data\suno_workflow.json` — chế độ chạy Suno.
-- `data\app.db` — địa chỉ API + model AI (không kèm API key), chưa có project nào.
-- Các thông số Suno/tempo/thể loại nằm sẵn trong mã nguồn, không cần chỉnh.
-
-**Không** kèm theo: mật khẩu, cookie đăng nhập Suno/nhaccuatui, API key — mỗi người tự đăng nhập/nhập key.
-
-## Khi chia sẻ cho người khác
-
-Nén cả thư mục `Cover Audio Tool` (sau khi đã dùng, **bỏ** các thư mục `.venv`,
-`.browser_profile_*`, `media`, `outputs`, `stems` và file `data\app.db` của mình nếu
-không muốn chia sẻ project/đăng nhập của bạn).
-
-## Lưu ý về lyrics trên Suno
-
-Lyrics gửi lên Suno phải giữ nguyên chữ tự nhiên (không thay dấu cách bằng `_`, không
-làm biến dạng chữ). Bài bị Suno báo bản quyền sẽ được đánh dấu `rejected` và tool
-chuyển sang bài tiếp theo.
-
-## Quy trình chuẩn ② Suno Cover (bán thủ công, kiểm chứng 12/11/2026)
-
-1. **Tool:** chuẩn hoá lời (bước 6) + soạn Styles (bước 7), upload bản WAV tempo lên Suno, mở **Suno Editor**.
-2. **Bạn:** trong Editor chỉnh **Tempo** (tool gợi ý, vd 32) → bấm **Save as New Song**. Không cần làm gì khác.
-3. **Tool:** tự nhận bài vừa lưu, mở trang bài → **⋯ → Remix → Cover**. Nếu Suno còn đang xử lý
-   bài vừa lưu và chưa nhận cú bấm, tool tự chờ rồi bấm lại (tối đa 3 lần, ~2 phút).
-4. **Tool:** điền form Cover: lời bài hát, Styles, Max Mode, thanh trượt (Weirdness 10, Style
-   Influence 75, Audio Influence 50).
-5. **Bạn:** xem lại form trong cửa sổ Suno rồi tự bấm **Create** (tool không bao giờ tự bấm).
-6. **Tool:** nhận 2 bản Suno tạo ra, tải về, master, chuyển sang bài tiếp theo.
-
-Nếu Suno báo lời/nhạc có bản quyền, bài bị đánh dấu *rejected* và tool chuyển sang bài sau.
-Muốn tool dùng mã mới sau khi cập nhật: chỉ khởi động lại khi **không** có việc đang chạy.
-
-## Chạy auto: 2 kiểu + nút mở thư mục (12/11/2026)
-
-- (Từ 16/11/2026 chỉ còn 1 kiểu: chạy audio — xem mục *Bản không còn phần video* bên dưới.)
-- Tab **③ Lời bài hát**: nút **📂 Mở thư mục nghe audio** mở thư mục nhạc đã xong trên máy.
-
-## Xoá bản cover không dùng + thùng rác (12/11/2026)
-
-- Tab **② Suno Cover**, mỗi bản cover có nút **🗑 Xoá bản này** → bản đó vào thùng rác, không còn dùng để master / ghép mix. File trên máy KHÔNG bị xoá.
-- Dưới mỗi bài có **🗑 Thùng rác (N)**: bấm mở ra để nghe thử và **♻ Khôi phục** từng bản (hoặc **♻ Khôi phục tất cả**).
-
-## Bản không còn phần video (16/11/2026)
-
-- Đã gỡ toàn bộ phần dựng video, ảnh bìa/thumbnail, đăng YouTube, Short khỏi tool (cả giao
-  diện lẫn mã chạy). Tool chỉ còn 4 bước ① → ④ làm audio.
-- Thanh dưới cùng chỉ còn nút **🎧 Chạy tự động**: tải bài → Suno Cover → master (Mix Set
-  thêm bước ghép mix).
-- Tạo lô Mix Set / Track lẻ không còn ô chọn kênh YouTube, style ảnh, intro, nội dung video.
-- Dữ liệu project cũ vẫn mở bình thường. Cập nhật từ bản cũ: xem mục **Cập nhật lên bản mới**.
-
-## Mở tool bằng cửa sổ ứng dụng (.exe) — không cần trình duyệt
-
-- Bấm đúp **`CoverAudioTool.exe`** trong thư mục tool (hoặc lối tắt **Cover Audio Tool** ngoài Desktop).
-- Tool mở trong **cửa sổ riêng** (có icon tai nghe trên thanh taskbar), không còn cửa sổ đen và tab trình duyệt.
-- **Đóng cửa sổ = tắt tool.** Nếu đang có việc chạy (Suno, mix…), tool hỏi lại trước khi đóng.
-- Nút ⬇ tải file vẫn hiện hộp chọn nơi lưu; link ngoài (nhaccuatui…) mở bằng trình duyệt.
-- `start.bat` vẫn dùng được như cũ. Nếu đã mở bằng `start.bat` rồi bấm `.exe`, cửa sổ chỉ hiện giao diện; đóng cửa sổ không tắt server của `start.bat`.
-- Lần đầu máy chưa có thư viện cửa sổ, tool hỏi để tự cài (cần mạng). Mất file `.exe` thì chạy lại `update.bat` (hoặc `launcher_exe\build_exe.bat CoverAudioTool`) để tạo lại.
-- Nhật ký server khi mở bằng cửa sổ: `data\logs\app_server.log`.
+| Hiện tượng | Cách xử lý |
+|---|---|
+| Cửa sổ báo "Không mở được tool" | Chụp màn hình gửi người hỗ trợ (kèm `data\logs\app_server.log`) |
+| Lỡ đóng cửa sổ khi đang chạy | Mở lại tool, vào project, bấm **🎧 Chạy tự động** để làm tiếp |
+| Suno đòi đăng nhập lại | **⚙ Settings → Đăng nhập Suno** |
+| Muốn lấy bản mới nhất | Đóng tool → bấm đúp `update.bat` (xem README) |
