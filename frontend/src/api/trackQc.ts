@@ -50,4 +50,3 @@ export const useSetAutoRegen = (pid: number) =>
 
 export const usePatchMix = (pid: number) => useQcPost<void>(pid, 'patch-mix');
 
-export const useRemuxVideo = (pid: number) => useQcPost<void>(pid, 'remux');

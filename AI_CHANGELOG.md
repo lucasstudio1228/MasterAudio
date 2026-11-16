@@ -54,3 +54,18 @@
 - **Sau:** xoá bản không dùng → vào thùng rác (file trên máy giữ nguyên), khôi phục lại đúng vị trí/bài gốc/lời. Bài đã «Loại bài» vẫn khôi phục bằng nút của bài như cũ (không hiện thùng rác riêng).
 - **Kiểm thử:** `tests.test_track_recovery` + `tests.test_audio_only_mode` 9 OK. Chạy thêm 6 module cover: lỗi chỉ nằm ở `tests.test_suno_cover` (FakeDriver thiếu tham số `manual_editor` — test cũ từ trước, không liên quan thay đổi này). `npm run build` OK. Server thử 8101: project #27 hiện 4 nút «🗑 Xoá bản này»; không xoá dữ liệu thật.
 - **Tồn đọng:** khởi động lại backend 8100/8200 khi rảnh để có `source_id` (trước đó khối thùng rác theo bài chưa hiện, nút xoá vẫn chạy). Cập nhật FakeDriver trong `tests/test_suno_cover.py` cho tham số `manual_editor`.
+
+## 2026-11-16 17:30 — Gỡ toàn bộ phần video khỏi bản GitHub + bản cập nhật (patch) không cần cài lại
+
+- **Yêu cầu:** "bản github này loại bỏ tất cả phần liên quan đến video. Tạo 1 bản patch mới để không phải xoá tất cả bản cũ đi cài lại".
+- **Nguyên nhân:** bản GitHub (Cover Audio Tool) vẫn còn dựng video, thumbnail, đăng YouTube; người dùng cũ muốn lên bản mới phải xoá và cài lại từ đầu.
+- **File đã đổi:**
+  - Backend: xoá 30 file (`routers` video/youtube, 26 module `backend/video/*`, `cover/overlay`, `cover/youtube_text`); sửa `main.py`, `batch_service.py`, `routers/{mixes,projects,tasks,settings,track_qc}.py`, `mix_patch.py`, `video/service.py`, `video/prompt_workflow.py`, `project_progress.py` — lô luôn chạy chỉ audio.
+  - Frontend: xoá `api/video.ts`, `api/youtube.ts`, `VideoPanel`, `ManualClipsPanel`, `PublishPanel`, 3 trang setting thumbnail/video/YouTube; sửa `ProjectFormModal`, `ProjectDetailPage` (4 tab), `TaskBar` (1 nút «🎧 Chạy tự động»), `AddTracksPanel`, `WorkflowStatusBar`, `RenameProjectDialog`, `CoverPanel`, `TrackQcPanel`, `ProjectsPage`, `SunoPanel`, `MixSettingsPanel`, `SunoCoverPanel`, `api/{projects,settings,trackQc}.ts`; build lại `frontend/dist`.
+  - `.gitignore`: neo `/outputs/ /stems/ /Projects/ /media/ /Trash/` (trên Windows không phân biệt hoa thường, `Projects/`, `stems/` đã chặn nhầm `frontend/src/components/projects|stems` — 12 file này trước đây chưa từng lên GitHub), thêm `/_ban_cu_truoc_cap_nhat/`. `.gitattributes`: `*.ps1` CRLF.
+  - Mới: `update.bat`, `update_mac.command`, `patch/apply_update.ps1`, `patch/removed_files.txt` (38 file cần xoá ở máy cũ).
+  - `README.md`, `HUONG_DAN.md`: mục «Cập nhật lên bản mới», mục «Bản không còn phần video».
+- **Trước:** có tab Video/Đăng YouTube, 2 nút auto; cập nhật phải cài lại.
+- **Sau:** chỉ còn audio (4 bước); bấm đúp `update.bat` (Mac `update_mac.command`) để tải bản mới, sao lưu mã cũ vào `_ban_cu_truoc_cap_nhat`, chép đè mã, xoá file video cũ, giữ `.venv`, `data` (chỉ thêm file thiếu), media, outputs, đăng nhập, `.env`; pip chỉ chạy khi `requirements.txt` đổi. Tool đang chạy (cổng 8200) thì dừng, không cập nhật.
+- **Kiểm thử:** `npm run build` OK. Thử `apply_update.ps1` trên bản sao 4beac96 có dữ liệu giả: xoá đúng 38 file, giữ setting/app.db/.env/media, chạy lần 2 xoá 0 file và bỏ qua pip. Server thử cổng 8299: 129 API, không còn đường dẫn video; giao diện 4 tab, không lỗi console. `update.bat`: tự chép ra TEMP, đường dẫn tiếng Việt, kiểm tra cổng, tải + giải nén OK. `bash -n update_mac.command` OK (chưa chạy thật trên Mac).
+- **Tồn đọng:** chạy thử `update.bat` đầu-cuối sau khi đẩy lên GitHub; `update_mac.command` chưa thử trên máy Mac thật. Tool chính 8100 không đổi.

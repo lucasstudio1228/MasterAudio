@@ -2,9 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
 import { newApi } from './storage';
 import type {
-  BatchCreate,
   BatchRun,
-  BatchStyleOption,
   BulkDeleteResult,
   GenreOption,
   InstrumentOption,
@@ -66,26 +64,6 @@ export function useInstrumentCatalog() {
   });
 }
 
-export function useBatchStyles() {
-  return useQuery<{ default: string; styles: BatchStyleOption[] }>({
-    queryKey: ['batch-styles'],
-    queryFn: async () =>
-      (await api.get('/api/projects/batch/styles')).data,
-    staleTime: Infinity,
-  });
-}
-
-export function useCreateBatch() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: BatchCreate) =>
-      // AI nghĩ N ý tưởng trong request này (thường 30–120s) → không dùng timeout
-      // 30s mặc định, nếu không UI báo lỗi trong khi server vẫn tạo lô.
-      (await api.post<BatchRun>('/api/projects/batch', data, { timeout: 600_000 })).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
-  });
-}
-
 export function useCreateMixSet() {
   const qc = useQueryClient();
   return useMutation({
@@ -96,17 +74,12 @@ export function useCreateMixSet() {
       if (!single) body.append('name', data.name);
       body.append('music_style', data.music_style);
       body.append('music_line', data.music_line ?? '');
-      if (data.channel_id != null) body.append('channel_id', String(data.channel_id));
-      body.append('video_style', data.video_style ?? 'channel');
       body.append('theme', data.theme ?? '');
       if (!single)
         body.append('mix_duration_minutes', String(data.mix_duration_minutes ?? 120));
       body.append('creative_instrument', String(data.creative_instrument ?? true));
-      body.append('intro_mode', data.intro_mode ?? 'thumbnail');
-      body.append('cast_mode', data.cast_mode ?? 'character_pet');
-      body.append('footage_scene_mode', data.footage_scene_mode ?? 'auto');
-      body.append('audio_only', String(data.audio_only ?? false));
-      // Track lẻ: mỗi dòng một project riêng (ảnh bìa + video khác nhau).
+      body.append('audio_only', 'true');   // Cover Audio Tool: luôn chỉ audio
+      // Track lẻ: mỗi dòng một project riêng.
       return (await api.post<BatchRun>(single ? '/api/projects/singles' : '/api/projects/mixset', body, {
         timeout: 600_000,
       })).data;

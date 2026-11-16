@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   trackAudioUrl, useAnalyzeTracks, useFlagTrack, usePatchMix,
-  useRegenerateTracks, useRemuxVideo, useSetAutoRegen, useTrackQc,
+  useRegenerateTracks, useSetAutoRegen, useTrackQc,
 } from '../../api/trackQc';
 import type { QcSegment, QcTrack } from '../../types';
 
@@ -42,7 +42,6 @@ export default function TrackQcPanel({ projectId }: { projectId: number }) {
   const flag = useFlagTrack(projectId);
   const regen = useRegenerateTracks(projectId);
   const patch = usePatchMix(projectId);
-  const remux = useRemuxVideo(projectId);
   const setAuto = useSetAutoRegen(projectId);
 
   const [from, setFrom] = useState('');
@@ -188,7 +187,7 @@ export default function TrackQcPanel({ projectId }: { projectId: number }) {
             Sau mỗi lần mix xong: rà soát → bài Suno lỗi được thay tự động (bài dự phòng 0 credit
             trước, rồi Create tối đa {data.auto_limits.max_creates_per_track} lượt/bài ≈{' '}
             {data.auto_limits.max_creates_per_track * data.credits_per_create} credit, tối đa{' '}
-            {data.auto_limits.max_tracks} bài/lượt) → tự «Vá mix» → mới dựng video bằng bản đã vá.
+            {data.auto_limits.max_tracks} bài/lượt) → tự «Vá mix».
             Hết credit thì dừng, không tự mua.
           </p>
           {data.auto_fix && (
@@ -309,7 +308,7 @@ export default function TrackQcPanel({ projectId }: { projectId: number }) {
             </select>
             lượt Create/bài
           </label>
-          {busy && !jobRunning && <span className="text-xs text-yellow-300">Đang có tác vụ Video/Suno chạy — đợi xong.</span>}
+          {busy && !jobRunning && <span className="text-xs text-yellow-300">Đang có tác vụ Suno chạy — đợi xong.</span>}
         </div>
         {confirming && (
           <div className="rounded bg-yellow-500/10 p-2 text-xs text-yellow-200">
@@ -331,7 +330,7 @@ export default function TrackQcPanel({ projectId }: { projectId: number }) {
         {job && (
           <div className="text-xs">
             <div className="mb-1 flex justify-between text-gray-400">
-              <span>{job.kind === 'suno-fix' ? 'Tạo lại Suno' : 'Thay nhạc trong video'} · {job.status}</span>
+              <span>{job.kind === 'suno-fix' ? 'Tạo lại Suno' : job.kind} · {job.status}</span>
               <span>{Math.round(job.percent)}%</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded bg-white/5">
@@ -348,8 +347,7 @@ export default function TrackQcPanel({ projectId }: { projectId: number }) {
         <div className="space-y-2 rounded-lg border border-sky-500/30 bg-sky-500/5 p-3 text-xs text-sky-200">
           Bản mix «{tl.mix_title}» còn {tl.outdated_segments} đoạn dùng bài đã thay.
           «Vá mix» render lại <b>đúng thứ tự & tên đoạn cũ</b>, chỉ thay các đoạn đó (phần trước giữ y hệt,
-          phần sau lệch vài giây nếu bài mới dài/ngắn hơn), độ dài không vượt bản cũ; video
-          final.mp4 (nếu có) được thay nhạc, không dựng lại hình.
+          phần sau lệch vài giây nếu bài mới dài/ngắn hơn), độ dài không vượt bản cũ.
           <div className="flex gap-2">
             <button className="rounded bg-sky-600 px-3 py-1 font-semibold text-white disabled:opacity-40"
               disabled={patch.isPending || !!data?.mix_busy || busy}
@@ -363,12 +361,6 @@ export default function TrackQcPanel({ projectId }: { projectId: number }) {
       {tl?.mix_title.startsWith('Vá mix') && tl.outdated_segments === 0 && !data?.mix_busy && (
         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400">
           Bản mix đang dùng là bản đã vá.
-          <button className="rounded bg-white/5 px-2 py-1 hover:bg-white/10 disabled:opacity-40"
-            disabled={busy || remux.isPending} onClick={() => remux.mutate()}>
-            🎬 Thay nhạc trong final.mp4
-          </button>
-          <span>(tự chạy sau khi vá; bấm lại nếu lúc đó worker video bận). Bản nháp YouTube cũ vẫn là nhạc cũ.</span>
-          {remux.error && <span className="text-red-400">{errText(remux.error)}</span>}
         </div>
       )}
     </div>

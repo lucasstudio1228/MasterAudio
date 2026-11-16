@@ -324,90 +324,6 @@ def _run_dict(run: BatchRun, items: list[dict]) -> dict:
     }
 
 
-def create_batch(count: int, instrument: str, music_style: str, video_style: str,
-                 theme: str = "", *, target_tracks: Optional[int] = None,
-                 max_create_actions: Optional[int] = None,
-                 channel_name: str = "",
-                 channel_id: Optional[int] = None,
-                 mix_duration_minutes: float = 120.0,
-                 intro_mode: str = "thumbnail",
-                 cast_mode: str = "character_pet",
-                 music_line: str = "") -> dict:
-    """
-    Sinh N ý tưởng phân biệt (1 call LLM, KHÔNG tốn credit Suno) → tạo N Project
-    cùng batch_id → tạo BatchRun → khởi động thread chạy tuần tự.
-
-    Ném RuntimeError nếu đầu vào không hợp lệ hoặc AI không sinh đủ ý tưởng
-    (không tạo project rác).
-    """
-    from backend.database import DB_PATH
-    from backend.core_bridge import get_api_config_from_db
-    from backend.video import batch_ideas
-    from backend.video import config as vconfig
-
-    count = int(count)
-    if not 1 <= count <= 50:
-        raise RuntimeError("Số lượng sản phẩm phải từ 1 đến 50.")
-    instrument = (instrument or "").strip()
-    music_style = (music_style or "").strip()
-    music_line = (music_line or "").strip()
-    # Dùng chính bộ phong cách của video/config (10 key) — không tự chế danh sách
-    # riêng, tránh gửi key lạ rồi bị normalize_style âm thầm đổi về "2d".
-    # "channel" = phong cách riêng của kênh: xoay vòng trong cặp phong cách của
-    # kênh cho từng project (styles_cycle); key cụ thể = giữ nguyên cả lô.
-    from backend.video import channel_looks
-    from backend.video.service import _lookup_channel_by_id
-    # Kênh người dùng chọn cho cả lô — kênh nào cũng nhận nhạc cụ/thể loại nào.
-    chosen = _lookup_channel_by_id(channel_id) if channel_id else None
-    if channel_id and not chosen:
-        raise RuntimeError("Kênh YouTube đã chọn không còn trong ⚙️ Cài đặt — chọn lại kênh.")
-    channel_id = chosen["id"] if chosen else None
-    intro_mode = vconfig.normalize_intro_mode(intro_mode)
-    cast_mode = vconfig.normalize_cast_mode(cast_mode)
-    if chosen:
-        channel_name = chosen.get("channel_name") or channel_name
-    styles_cycle: list[str] = []
-    if (video_style or "").strip().lower() in ("", "channel"):
-        m = channel_looks.mapping_for(instrument, music_style, channel_id=channel_id,
-                                      music_line=music_line)
-        if m:
-            recent = channel_looks.recent_channel_styles(m)
-            styles_cycle = [channel_looks.style_for_channel(m, recent, offset=i)
-                            for i in range(count)]
-    style_key = (styles_cycle[0] if styles_cycle
-                 else channel_looks.resolve_video_style(video_style, instrument, music_style,
-                                                        channel_id=channel_id,
-                                                        music_line=music_line))
-    if not music_style:
-        raise RuntimeError("Thiếu thể loại nhạc cho lô sản xuất.")
-
-    tgt = int(target_tracks) if target_tracks else int(vconfig.SUNO.target_tracks)
-    mca = (int(max_create_actions) if max_create_actions
-           else int(vconfig.SUNO.max_create_actions))
-
-    # Chỉ 1 lô chạy một lúc (worker Suno/Video tuần tự) — chặn cả lần bấm lại khi
-    # trình duyệt đã báo timeout nhưng server vẫn đang tạo lô trước đó.
-    active = _active_batch_key()
-    if active:
-        raise RuntimeError("Đang có 1 lô sản xuất chạy — đợi lô đó xong hoặc huỷ "
-                           "rồi mới tạo lô mới (tránh tạo trùng).")
-    if not _create_lock.acquire(blocking=False):
-        raise RuntimeError("Đang tạo 1 lô khác (AI đang nghĩ ý tưởng) — đợi ít phút, "
-                           "lô sẽ hiện ở thanh tiến độ.")
-    try:
-        api_config = get_api_config_from_db(str(DB_PATH))
-        ideas = batch_ideas.generate_batch_ideas(
-            count, instrument, style_key, theme, api_config, music_style=music_style,
-            cast_mode=cast_mode)
-        return _create_batch_rows(ideas, count, instrument, music_style, style_key,
-                                  theme, channel_name, tgt, mca, mix_duration_minutes,
-                                  styles_cycle=styles_cycle, channel_id=channel_id,
-                                  intro_mode=intro_mode, cast_mode=cast_mode,
-                                  music_line=music_line)
-    finally:
-        _create_lock.release()
-
-
 def create_cover_mixset(name: str, song_lines: list[str], music_style: str,
                         video_style: str, theme: str = "", *, music_line: str = "",
                         channel_id: Optional[int] = None,
@@ -541,26 +457,8 @@ def _cover_chain(batch_key: str, project_id: int, source_ids: list[int],
     def say(message: str) -> None:
         _mixset_message(batch_key, prefix + message)
 
-    audio_only = _is_audio_only(project_id)
-    if audio_only and _verify_audio(project_id)[0]:
-        return
-    # Resume không được chạy lại Suno/đốt credit nếu chuỗi đã tới Video/Upload.
-    final_dir, project_name = _project_paths(project_id)
-    if not audio_only and (final_dir / "final.mp4").is_file():
-        if not _has_youtube_draft(project_id):
-            from backend.video import service as video_service
-            with Session(engine) as session:
-                project = session.get(Project, project_id)
-            video_job_manager.submit(
-                project_id, "upload", video_service.step_upload_youtube,
-                project_name, (project.instrument if project else "") or "",
-                (project.music_style if project else "") or "")
-            while video_job_manager.is_busy() and not ev.is_set():
-                say("Đang lưu bản nháp YouTube…")
-                time.sleep(5)
-        ok, detail = _verify_product(project_id)
-        if not ok:
-            raise RuntimeError(f"Chưa hoàn tất: {detail}.")
+    audio_only = True      # Cover Audio Tool: luôn chỉ làm audio
+    if _verify_audio(project_id)[0]:
         return
 
     with Session(engine) as session:
@@ -669,25 +567,6 @@ def _cover_chain(batch_key: str, project_id: int, source_ids: list[int],
     if audio_only:
         say("Đã đủ cover — ghép Mix Set (chế độ Chỉ audio, không dựng video).")
         mixes.start_mix_for_project(project_id, force_video=False)
-    elif is_single:
-        # Track lẻ: tuyệt đối không render Mix một bài. Dùng trực tiếp cover đã
-        # master rồi chuyển sang Video; service tự lấy đúng Track/CoverSong.
-        from backend.video import service as video_service
-        audio = _first_cover_audio(source_ids) or video_service.find_latest_audio(
-            project_id, project_ctx["name"])
-        if not audio:
-            raise RuntimeError("Track lẻ chưa có file cover/master để dựng video.")
-        say("Đã đủ cover (bài lẻ) — bản Audio dừng ở đây, không dựng video.")
-        from backend.edition import AUDIO_ONLY
-        if not AUDIO_ONLY:
-          video_job_manager.submit(
-            project_id, "full", video_service.run_full_video,
-            project_ctx["name"], audio, None, project_ctx["name"],
-            project_ctx["idea"] or None, project_ctx["style"],
-        )
-    else:
-        say("Đã đủ cover — bắt đầu ghép Mix Set.")
-        mixes.start_mix_for_project(project_id, force_video=True)
 
     idle = 0
     deadline = time.time() + 12 * 3600
@@ -1010,71 +889,6 @@ def _run_cover_singles(batch_key: str) -> None:
         _schedule_auto_skip(batch_key)
         return
     _finish(batch_key, "completed", f"Hoàn tất Track lẻ: {summary}.")
-
-
-def _create_batch_rows(ideas, count, instrument, music_style, style_key, theme,
-                       channel_name, tgt, mca, mix_duration_minutes,
-                       styles_cycle: Optional[list[str]] = None,
-                       channel_id: Optional[int] = None,
-                       intro_mode: str = "thumbnail",
-                       cast_mode: str = "character_pet",
-                       music_line: str = "") -> dict:
-    batch_key = uuid.uuid4().hex
-    params = {
-        "count": count, "instrument": instrument, "music_style": music_style,
-        "music_line": music_line,
-        "video_style": ("channel:" + ",".join(dict.fromkeys(styles_cycle))
-                        if styles_cycle else style_key),
-        "theme": theme, "channel_name": channel_name, "channel_id": channel_id,
-        "intro_mode": intro_mode, "cast_mode": cast_mode,
-        "target_tracks": tgt, "max_create_actions": mca,
-        "mix_duration_minutes": float(mix_duration_minutes),
-    }
-
-    with Session(engine) as session:
-        created_ids = []
-        for i, it in enumerate(ideas):
-            p = Project(
-                name=it["project_name"],
-                description=it["description"],
-                video_idea=it["video_idea"],
-                suno_idea=it["suno_idea"],
-                video_style=(styles_cycle[i % len(styles_cycle)] if styles_cycle
-                             else style_key),
-                instrument=instrument,
-                music_style=music_style,
-                music_line=music_line,
-                channel_id=channel_id,
-                intro_mode=intro_mode,
-                cast_mode=cast_mode,
-                music_source="suno",
-                auto_video=True,
-                auto_upload=True,
-                batch_id=batch_key,
-                mix_duration_minutes=float(mix_duration_minutes),
-            )
-            session.add(p)
-            session.commit()
-            session.refresh(p)
-            created_ids.append(p.id)
-
-        run = BatchRun(
-            batch_key=batch_key, total=count, status="running",
-            current_index=0, current_project_id=created_ids[0],
-            params_json=json.dumps(params, ensure_ascii=False),
-            message="Đã tạo N project — bắt đầu chạy tuần tự.",
-        )
-        session.add(run)
-        session.commit()
-        session.refresh(run)
-
-    _cancel_flags[batch_key] = threading.Event()
-    t = threading.Thread(target=_run_batch, args=(batch_key,),
-                         name=f"batch-{batch_key[:8]}", daemon=True)
-    _threads[batch_key] = t
-    t.start()
-
-    return get_batch(batch_key)
 
 
 def cancel_batch(batch_key: str) -> Optional[dict]:
@@ -1437,25 +1251,7 @@ def _audio_done(pid: int) -> tuple[bool, str]:
 
 
 def _verify_product(pid: int) -> tuple[bool, str]:
-    from backend.edition import AUDIO_ONLY
-    if AUDIO_ONLY:
-        return _audio_done(pid)
-    return _verify_video_product(pid)
-
-
-def _verify_video_product(pid: int) -> tuple[bool, str]:
-    """Sản phẩm CHỈ được tính là xong khi có final.mp4 VÀ đã lưu nháp YouTube —
-    không tin mỗi 'job đã chạy xong' (job video có thể hỏng mà Suno vẫn
-    COMPLETED, lúc đó cả 2 manager đều rảnh và dễ bị chấm nhầm là hoàn tất).
-    Lô «Chỉ audio»: xong khi đã có file audio (bản cover / bản mix)."""
-    if _is_audio_only(pid):
-        return _verify_audio(pid)
-    final = _project_paths(pid)[0] / "final.mp4"
-    if not final.exists():
-        return (False, "thiếu final.mp4")
-    if not _has_youtube_draft(pid):
-        return (False, "chưa có bản nháp YouTube")
-    return (True, "final.mp4 + bản nháp YouTube đã có")
+    return _audio_done(pid)
 
 
 def _submit_stage(pid: int, ov: dict, *, resume: bool) -> Optional[str]:
@@ -1465,8 +1261,6 @@ def _submit_stage(pid: int, ov: dict, *, resume: bool) -> Optional[str]:
     hỏng ở khâu sau thì phải nối lại từ Mix / Video / Upload, nếu không sẽ đốt
     thêm credit Suno vô ích (hoặc resume lỗi vì batch đã terminal).
     """
-    from backend.video import service as video_service
-
     st = suno_service.batch_status(pid) or {}
     phase = st.get("phase")
     imported = int(st.get("imported_tracks") or 0)
@@ -1478,46 +1272,11 @@ def _submit_stage(pid: int, ov: dict, *, resume: bool) -> Optional[str]:
                                  dry_run=False, overrides=ov, resume=can_resume)
         return "suno"
 
-    final_dir, name = _project_paths(pid)
-    from backend.edition import AUDIO_ONLY
-    if AUDIO_ONLY:
-        if _audio_done(pid)[0]:
-            return "done"
-        from backend.routers.mixes import start_mix_for_project
-        start_mix_for_project(pid)
-        return "mix"
-    if not (final_dir / "final.mp4").exists():
-        # Có mix chưa? Chưa thì chạy Mix (mix xong tự kéo sang Video).
-        from backend.models import Mix
-        with Session(engine) as session:
-            proj = session.get(Project, pid)
-            mixes = session.exec(select(Mix).where(Mix.project_id == pid)).all()
-            idea = (proj.video_idea if proj else "") or ""
-            style = (proj.video_style if proj else None)
-        done_mix = [m for m in mixes
-                    if (m.status or "") == "completed" and m.output_dir
-                    and (Path(m.output_dir) / "mix.wav").exists()]
-        if not done_mix:
-            from backend.routers.mixes import start_mix_for_project
-            start_mix_for_project(pid, force_video=True)
-            return "mix"
-        audio = str(Path(done_mix[-1].output_dir) / "mix.wav")
-        # Chạy lại Video luôn ở chế độ resume: GIỮ ảnh + clip đã tạo (restart từng
-        # xoá sạch 28 clip của lần trước chỉ vì bước sau lỗi).
-        video_job_manager.submit(pid, "full", video_service.run_full_video,
-                                 (name or "meditation"), audio, None, name,
-                                 (idea or None), style, mode="resume")
-        return "video"
-
-    if not _has_youtube_draft(pid):
-        with Session(engine) as session:
-            proj = session.get(Project, pid)
-            instrument = (proj.instrument if proj else "") or ""
-            style_music = (proj.music_style if proj else "") or ""
-        video_job_manager.submit(pid, "upload", video_service.step_upload_youtube,
-                                 name, instrument, style_music)
-        return "upload"
-    return "done"
+    if _audio_done(pid)[0]:
+        return "done"
+    from backend.routers.mixes import start_mix_for_project
+    start_mix_for_project(pid)
+    return "mix"
 
 
 def _await_product_chain(batch_key: str, pid: int,

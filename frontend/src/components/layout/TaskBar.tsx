@@ -3,8 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAutoRunToEnd, useGlobalTaskControl, useGlobalTasks, type GlobalTask } from '../../api/tasks';
 
 const ICON: Record<string, string> = {
-  suno: '🎼', 'suno-login': '🔑', 'suno-fix': '🩹', remux: '🎬', upload: '📤', upload_short: '📱', continue: '⏩',
-  full: '🎞️', images: '🖼️', clips: '🎥', assemble: '🧩', mix: '🎚️', stem: '🪄',
+  suno: '🎼', 'suno-login': '🔑', 'suno-fix': '🩹', mix: '🎚️', stem: '🪄',
   batch: '🏭',
   'auto-run': '🚀',
   'cover-suno': '🎤',
@@ -170,18 +169,10 @@ export default function TaskBar() {
         <button
           disabled={controlling || targetProjectId == null}
           onClick={() => autoRun.mutate({ projectId: targetProjectId, audioOnly: true })}
-          title="Chạy tự động CHỈ AUDIO: tải bài → Suno Cover → master (Mix Set thêm bước ghép mix). Không dựng video."
+          title="Chạy tự động: tải bài → Suno Cover → master (Mix Set thêm bước ghép mix)."
           className="rounded-md border border-sky-400/40 bg-sky-950/50 px-3 py-1 text-[11px] font-semibold text-sky-100 hover:bg-sky-900/70 disabled:opacity-40"
         >
-          {autoRun.isPending && autoRun.variables?.audioOnly ? '⏳ Đang kích hoạt…' : '🎧 Auto chỉ audio'}
-        </button>
-        <button
-          disabled={controlling || targetProjectId == null}
-          onClick={() => autoRun.mutate({ projectId: targetProjectId, audioOnly: false })}
-          title="Chạy tự động CẢ AUDIO + VIDEO: giữ phần đã xong, nối từ checkpoint hiện tại đến final + nháp YouTube"
-          className="rounded-md border border-violet-400/40 bg-violet-950/50 px-3 py-1 text-[11px] font-semibold text-violet-100 hover:bg-violet-900/70 disabled:opacity-40"
-        >
-          {autoRun.isPending && !autoRun.variables?.audioOnly ? '⏳ Đang kích hoạt…' : '🚀 Auto audio + video'}
+          {autoRun.isPending && autoRun.variables?.audioOnly ? '⏳ Đang kích hoạt…' : '🎧 Chạy tự động'}
         </button>
       </div>
     </footer>

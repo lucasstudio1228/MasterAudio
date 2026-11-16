@@ -12,10 +12,9 @@ import type { ScanResult, Track } from '../../types';
 
 interface Props {
   projectId: number;
-  onGoToVideo?: () => void;   // chuyển sang tab Video sau khi upload
 }
 
-export default function AddTracksPanel({ projectId, onGoToVideo }: Props) {
+export default function AddTracksPanel({ projectId }: Props) {
   const [folder, setFolder] = useState('');
   const [result, setResult] = useState<ScanResult | null>(null);
   const [uploaded, setUploaded] = useState<Track | null>(null);
@@ -120,10 +119,10 @@ export default function AddTracksPanel({ projectId, onGoToVideo }: Props) {
         </div>
       )}
 
-      {/* Upload 1 track dài từ máy → dùng trực tiếp làm nhạc nền video */}
+      {/* Upload 1 track dài từ máy → dùng trực tiếp làm bản audio hoàn chỉnh */}
       <div className="border-t border-white/5 pt-3">
         <p className="text-xs text-gray-400">
-          Upload track dài → dùng trực tiếp làm nhạc nền video (không cần mix)
+          Upload track dài → dùng trực tiếp làm bản audio hoàn chỉnh (không cần mix)
         </p>
         <div className="flex items-center gap-2 mt-1">
           <input
@@ -163,17 +162,6 @@ export default function AddTracksPanel({ projectId, onGoToVideo }: Props) {
                 {uploaded.is_lossy ? ' · lossy' : ''})
               </span>
             </div>
-            <div className="text-gray-400 mt-1">
-              Sẽ được dùng làm nhạc nền khi tạo video.
-            </div>
-            {onGoToVideo && (
-              <button
-                onClick={onGoToVideo}
-                className="mt-2 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"
-              >
-                🎬 Sang phần Video để tạo video →
-              </button>
-            )}
           </div>
         )}
       </div>

@@ -15,8 +15,6 @@ from backend.job_manager import job_manager        # noqa: E402
 from backend.migrations import run_all as run_migrations  # noqa: E402
 from backend.routers import mixes, projects, settings, tracks  # noqa: E402
 from backend.routers.stems import router as stems_router        # noqa: E402
-from backend.routers.video import router as video_router        # noqa: E402
-from backend.routers.youtube import router as youtube_router    # noqa: E402
 from backend.routers.suno import router as suno_router          # noqa: E402
 from backend.routers.suno_wav import router as suno_wav_router  # noqa: E402
 from backend.routers.track_qc import router as track_qc_router  # noqa: E402
@@ -54,7 +52,7 @@ async def startup():
     loop = asyncio.get_running_loop()
     job_manager.bind_loop(loop)
     stem_job_manager.bind_loop(loop)
-    video_job_manager.bind_loop(loop)   # ← phần Video
+    video_job_manager.bind_loop(loop)   # worker Suno (tên cũ, không còn video)
     _start_deferred_sweep()
     _check_mastering()
     from backend import batch_service
@@ -122,8 +120,6 @@ app.include_router(tracks.router, prefix="/api")
 app.include_router(mixes.router, prefix="/api")
 app.include_router(settings.router)
 app.include_router(stems_router)   # đã có prefix="/api" nội bộ
-app.include_router(video_router)   # đã có prefix nội bộ
-app.include_router(youtube_router) # đã có prefix="/api/youtube" nội bộ
 app.include_router(suno_router)    # STEP 0 — Suno; prefix nội bộ
 app.include_router(suno_wav_router)  # tải WAV từ link Suno, không qua bên thứ ba
 app.include_router(track_qc_router)  # rà soát track lẻ + tạo lại Suno + vá mix

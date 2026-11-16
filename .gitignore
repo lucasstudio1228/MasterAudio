@@ -14,10 +14,10 @@ venv/
 data/*
 !data/master_config.json
 !data/suno_workflow.json
-outputs/
-stems/
-Projects/
-media/
+/outputs/
+/stems/
+/Projects/
+/media/
 *.db
 *.sqlite
 *.sqlite3
@@ -53,4 +53,7 @@ storage_state*.json
 tests/_probe_*.py
 tests/_run_*.py
 # Thùng rác project (giữ 7 ngày trước khi xoá vĩnh viễn)
-Trash/
+/Trash/
+
+# Ban sao luu tao boi update.bat
+/_ban_cu_truoc_cap_nhat/

@@ -250,12 +250,11 @@ def _auto_wait_idle(project_id: int) -> None:
 def _auto_worker(project_id: int, audio_only: bool = False) -> None:
     """Nối workflow bền vững từ dữ liệu thật: lô cover nếu có, nếu không thì
     Mix/Video resume. Không xoá hay tạo lại thành quả đã có.
-    audio_only=True: chỉ đi tới audio (cover/master, Mix Set thì thêm mix)."""
+    Cover Audio Tool: luôn chỉ đi tới audio (cover/master, Mix Set thì thêm mix)."""
     from backend import batch_service
-    from backend.job_manager import job_manager
     from backend.routers import mixes
-    from backend.video import service as video_service
     from backend.video.job_manager import video_job_manager
+    audio_only = True
 
     try:
         _auto_update(project_id, status="running", percent=1.0,
@@ -403,27 +402,6 @@ def _auto_worker(project_id: int, audio_only: bool = False) -> None:
                          message="Audio đã có sẵn — chế độ Chỉ audio không dựng video.")
             return
 
-        # Track lẻ bỏ qua Mix. Mix Set chưa có mix.wav thì render Mix; callback
-        # force_video + hai cờ trên sẽ tự nối Video và lưu nháp YouTube.
-        if project.kind != "single" and not any(
-                m.output_dir and (Path(m.output_dir) / "mix.wav").exists()
-                for m in mixes_done):
-            mixes.start_mix_for_project(project_id, force_video=True)
-            _auto_update(project_id, status="completed", percent=100.0,
-                         message="Đã khởi động Mix → Video → nháp YouTube.")
-            return
-
-        if video_job_manager.is_busy() or job_manager.is_busy():
-            raise RuntimeError("Worker vẫn bận; hãy bấm lại sau khi bước hiện tại dừng.")
-        audio = video_service.find_latest_audio(project_id, project.name)
-        if not audio:
-            raise RuntimeError("Không tìm thấy WAV đã master/mix để dựng video.")
-        video_job_manager.submit(
-            project_id, "continue", video_service.continue_from_images,
-            project.name, project.name, project.video_idea or None,
-            project.video_style)
-        _auto_update(project_id, status="completed", percent=100.0,
-                     message="Đã nối Ảnh → Clip → Video → nháp YouTube từ phần còn thiếu.")
     except Exception as exc:  # noqa: BLE001
         _auto_update(project_id, status="failed", percent=0.0,
                      message="Không thể tự động nối quy trình.",

@@ -81,6 +81,33 @@ Mac chip M1/M2/M3 chạy được nhưng tách giọng (Demucs) sẽ chậm hơn
 | Trình duyệt không tự mở | Tự mở Chrome/Safari, vào http://localhost:8200 |
 | Muốn cài lại từ đầu | Xoá thư mục ẩn `.venv` trong thư mục tool (Cmd + Shift + . để hiện file ẩn), chạy lại `install_mac.command` |
 
+## Cập nhật lên bản mới (KHÔNG cần xoá bản cũ, không mất dữ liệu)
+
+Dùng khi bạn đã cài tool rồi và muốn lấy bản mới nhất trên GitHub. Project, nhạc, setting,
+đăng nhập Suno/nhaccuatui và API key **được giữ nguyên**.
+
+**Lần đầu tiên** (bản cũ chưa có file cập nhật):
+- Windows: mở link https://raw.githubusercontent.com/lucasstudio1228/MasterAudio/main/update.bat
+  → chuột phải → **Lưu thành (Save as)** → lưu vào **thư mục tool** (cạnh `start.bat`), tên
+  `update.bat`.
+- Mac: mở link https://raw.githubusercontent.com/lucasstudio1228/MasterAudio/main/update_mac.command
+  → **Lưu thành** vào thư mục tool, tên `update_mac.command`. Rồi mở Terminal dán lệnh (thay
+  đường dẫn bằng thư mục tool của bạn):
+  ```bash
+  chmod +x ~/Downloads/MasterAudio-main/update_mac.command
+  ```
+
+**Mỗi lần cập nhật:**
+1. Chờ các việc đang chạy (Suno, mix…) xong, rồi **đóng cửa sổ `start.bat`** (Mac: cửa sổ
+   `start_mac.command`). Tool đang mở thì file cập nhật sẽ dừng và nhắc bạn đóng.
+2. Bấm đúp **`update.bat`** (Mac: **`update_mac.command`**) → chờ chữ **CẬP NHẬT XONG**
+   (CAP NHAT XONG).
+3. Bấm **`start.bat`** như mọi ngày.
+
+File cập nhật tự làm: tải bản mới từ GitHub → chép đè phần mã → xoá file cũ không còn dùng →
+cài thêm thư viện nếu bản mới cần. Mã cũ được cất trong thư mục `_ban_cu_truoc_cap_nhat\`
+(xoá đi cũng được khi tool chạy ổn).
+
 ## Sử dụng hằng ngày
 
 1. Bấm đúp **`start.bat`** (Mac: **`start_mac.command`**). Trình duyệt tự mở **http://localhost:8200**.
@@ -140,14 +167,19 @@ Muốn tool dùng mã mới sau khi cập nhật: chỉ khởi động lại khi
 
 ## Chạy auto: 2 kiểu + nút mở thư mục (12/11/2026)
 
-- Khi tạo lô Mix Set / Track lẻ, chọn **Kiểu chạy auto**:
-  - **🎬 Audio + Video** (mặc định): cover → master → (ghép mix) → dựng video → lưu nháp YouTube.
-  - **🎧 Chỉ audio**: cover → master (Mix Set thêm bước ghép mix) rồi dừng, không dựng video.
-- Thanh tác vụ dưới cùng có 2 nút: **🎧 Auto chỉ audio** và **🚀 Auto audio + video** (nối tiếp từ chỗ đang dừng).
+- (Từ 16/11/2026 chỉ còn 1 kiểu: chạy audio — xem mục *Bản không còn phần video* bên dưới.)
 - Tab **③ Lời bài hát**: nút **📂 Mở thư mục nghe audio** mở thư mục nhạc đã xong trên máy.
-- Tab **Video**: sau khi render xong có nút **📂 Mở thư mục video final** (chọn sẵn file final.mp4).
 
 ## Xoá bản cover không dùng + thùng rác (12/11/2026)
 
-- Tab **② Suno Cover**, mỗi bản cover có nút **🗑 Xoá bản này** → bản đó vào thùng rác, không còn dùng để master / ghép mix / làm video. File trên máy KHÔNG bị xoá.
+- Tab **② Suno Cover**, mỗi bản cover có nút **🗑 Xoá bản này** → bản đó vào thùng rác, không còn dùng để master / ghép mix. File trên máy KHÔNG bị xoá.
 - Dưới mỗi bài có **🗑 Thùng rác (N)**: bấm mở ra để nghe thử và **♻ Khôi phục** từng bản (hoặc **♻ Khôi phục tất cả**).
+
+## Bản không còn phần video (16/11/2026)
+
+- Đã gỡ toàn bộ phần dựng video, ảnh bìa/thumbnail, đăng YouTube, Short khỏi tool (cả giao
+  diện lẫn mã chạy). Tool chỉ còn 4 bước ① → ④ làm audio.
+- Thanh dưới cùng chỉ còn nút **🎧 Chạy tự động**: tải bài → Suno Cover → master (Mix Set
+  thêm bước ghép mix).
+- Tạo lô Mix Set / Track lẻ không còn ô chọn kênh YouTube, style ảnh, intro, nội dung video.
+- Dữ liệu project cũ vẫn mở bình thường. Cập nhật từ bản cũ: xem mục **Cập nhật lên bản mới**.

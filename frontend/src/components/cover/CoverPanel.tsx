@@ -51,8 +51,8 @@ function parseTime(v: string): number | null {
 }
 
 const LANG_LABEL: Record<string, string> = {
-  vi: '🇻🇳 Tiếng Việt (tiêu đề, mô tả, lời đều tiếng Việt)',
-  en: '🇺🇸 English (everything in English)',
+  vi: '🇻🇳 Tiếng Việt',
+  en: '🇺🇸 English',
 };
 const STYLE_LABEL: Record<CoverStyle, string> = {
   ballad: 'Ballad (nhẹ nhàng, chậm)',
@@ -66,8 +66,6 @@ const short = (s: string) => s.split(' (')[0];
 function SettingsCard({ projectId }: { projectId: number }) {
   const { data } = useCoverSettings(projectId);
   const update = useUpdateCoverSettings(projectId);
-  const [subtitle, setSubtitle] = useState('');
-  useEffect(() => setSubtitle(data?.thumb_subtitle ?? ''), [data?.thumb_subtitle]);
   if (!data) return <div className={card}>Đang tải…</div>;
   const set = (patch: Partial<CoverSettings>) => update.mutate(patch);
   const eff = data.effective;
@@ -75,7 +73,7 @@ function SettingsCard({ projectId }: { projectId: number }) {
 
   return (
     <div className={card}>
-      <h2 className={h2}>Cài đặt video cover</h2>
+      <h2 className={h2}>Cài đặt cover</h2>
       {eff && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-gray-300">
           <span>
@@ -94,7 +92,7 @@ function SettingsCard({ projectId }: { projectId: number }) {
       )}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <label className="space-y-1 text-sm text-gray-300">
-          <span>Ngôn ngữ của video</span>
+          <span>Ngôn ngữ</span>
           <select className={input} value={data.language}
             onChange={(e) => set({ language: e.target.value as CoverSettings['language'] })}>
             <option value="">
@@ -116,13 +114,6 @@ function SettingsCard({ projectId }: { projectId: number }) {
             ))}
           </select>
         </label>
-        <label className="space-y-1 text-sm text-gray-300 md:col-span-2">
-          <span>Dòng chữ phụ trên thumbnail (để trống = tool tự đặt theo thể loại)</span>
-          <input className={input} value={subtitle}
-            placeholder={eff ? `🤖 Tự đặt: ${eff.thumb_subtitle}` : 'VD: Tuyển Tập Ballad Cover Nhẹ Nhàng'}
-            onChange={(e) => setSubtitle(e.target.value)}
-            onBlur={() => subtitle !== data.thumb_subtitle && set({ thumb_subtitle: subtitle })} />
-        </label>
         <label className="space-y-1 text-sm text-gray-300">
           <span>Độ chính xác AI căn lời</span>
           <select className={input} value={data.whisper_model}
@@ -133,18 +124,6 @@ function SettingsCard({ projectId }: { projectId: number }) {
             <option value="small">Nhanh nhất (kém chính xác)</option>
           </select>
         </label>
-        <div className="space-y-1.5 text-sm text-gray-300">
-          {([
-            ['show_tracklist', 'Hiện danh sách bài (góc phải)'],
-            ['show_lyrics', 'Hiện lời bài hát (3 dòng dưới)'],
-            ['show_waveform', 'Hiện sóng âm nhảy theo nhạc (dưới lời)'],
-          ] as const).map(([k, label]) => (
-            <label key={k} className="flex items-center gap-2">
-              <input type="checkbox" checked={data[k]} onChange={(e) => set({ [k]: e.target.checked })} />
-              {label}
-            </label>
-          ))}
-        </div>
       </div>
       {update.isError && <p className="mt-2 text-xs text-red-400">Không lưu được cài đặt.</p>}
     </div>
@@ -310,7 +289,7 @@ function SongEditor({ projectId, song, busy }: { projectId: number; song: CoverS
     <div className={`${card} space-y-4`}>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <label className="space-y-1 text-sm text-gray-300">
-          <span>Tên bài (hiện trên video &amp; mô tả YouTube)</span>
+          <span>Tên bài</span>
           <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} />
         </label>
         <label className="space-y-1 text-sm text-gray-300">

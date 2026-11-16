@@ -226,7 +226,7 @@ export default function SunoPanel({ projectId }: { projectId: number }) {
   const queued = job?.status === "pending" ? job.message : "";
 
   /** «✨ AI viết prompt & CHẠY TỰ ĐỘNG»: viết Styles + phân kênh rồi Start LIVE
-   *  ngay → import → Mix → Video → lưu nháp YouTube (không hỏi lại). */
+   *  ngay → import → Mix (không hỏi lại). */
   async function runAuto() {
     try {
       const res = await genStyles.mutateAsync({ idea, preset, save: true });
@@ -399,7 +399,7 @@ export default function SunoPanel({ projectId }: { projectId: number }) {
               ? "✨ Đang viết prompt…"
               : start.isPending
               ? "▶ Đang khởi động…"
-              : "✨ AI viết prompt & CHẠY TỰ ĐỘNG (Suno → Mix → Video → nháp YouTube)"}
+              : "✨ AI viết prompt & CHẠY TỰ ĐỘNG (Suno → Mix)"}
           </button>
           <p className="mt-1 text-[10px] text-gray-600">
             Bấm là chạy LIVE ngay (tốn credit Suno) và tự đăng <b>bản nháp</b>
@@ -600,7 +600,7 @@ export default function SunoPanel({ projectId }: { projectId: number }) {
             <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-300">
               <input type="checkbox" className="h-4 w-4 accent-accent" checked={autoContinue}
                      disabled={busy} onChange={(e) => setAutoContinue(e.target.checked)} />
-              Tự chạy tiếp sau khi import đủ 15 WAV: Mix 15 track → render Video
+              Tự chạy tiếp sau khi import đủ 15 WAV: Mix 15 track
             </label>
           </div>
         </Section>

@@ -317,7 +317,7 @@ export default function ProjectsPage() {
       <ConfirmDialog
         open={toDelete !== null}
         title="Xoá project"
-        message={`Chuyển "${toDelete?.name}" vào Thùng rác? Toàn bộ dữ liệu (ảnh, clip, video final, nhạc, mix, stems, Suno) được dời sang thư mục Trash/ và tự xoá vĩnh viễn sau ${retentionDays} ngày — trong thời gian đó có thể khôi phục.`}
+        message={`Chuyển "${toDelete?.name}" vào Thùng rác? Toàn bộ dữ liệu (nhạc, mix, stems, Suno) được dời sang thư mục Trash/ và tự xoá vĩnh viễn sau ${retentionDays} ngày — trong thời gian đó có thể khôi phục.`}
         confirmLabel="🗑 Chuyển vào Thùng rác"
         danger
         onConfirm={() => {
@@ -337,7 +337,7 @@ export default function ProjectsPage() {
               Xoá {selectedProjects.length} project?
             </h3>
             <p className="mb-3 text-sm text-gray-300">
-              Chuyển vào 🗑 Thùng rác cùng TOÀN BỘ dữ liệu (ảnh, clip, video final, mix, stems,
+              Chuyển vào 🗑 Thùng rác cùng TOÀN BỘ dữ liệu (mix, stems,
               nhạc Suno…). Tool tự xoá vĩnh viễn sau {retentionDays} ngày — trong thời gian đó có
               thể khôi phục. File nhạc gốc import từ thư mục ngoài không bị đụng tới.
             </p>

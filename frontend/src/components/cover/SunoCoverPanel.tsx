@@ -163,7 +163,7 @@ const tempoLabel = (x: number) => {
 };
 
 // Kéo thanh → mọi trình phát trong bản cover này phát ngay ở tốc độ mới (giữ cao độ)
-// để nghe thử. OK → server xuất hẳn file tempo mới; Lời bài hát / Mix / Video dùng file đó.
+// để nghe thử. OK → server xuất hẳn file tempo mới; Lời bài hát / Mix dùng file đó.
 function CoverTempoBar({ projectId, source, cover, rowRef }: {
   projectId: number; source: SourceSong; cover: SourceCover;
   rowRef: RefObject<HTMLDivElement | null>;
@@ -373,7 +373,7 @@ function CoverRow({ projectId, source, cover, redoBpm, settingsPending }:
           onClick={() => {
             if (!window.confirm(
               `Chuyển «${cover.filename}» vào thùng rác?\n\n`
-              + '• Bản này không còn được dùng để master / ghép mix / làm video.\n'
+              + '• Bản này không còn được dùng để master / ghép mix.\n'
               + '• File trên máy KHÔNG bị xoá — bấm «♻ Khôi phục» trong Thùng rác để lấy lại.',
             )) return;
             setErr(null);

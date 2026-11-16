@@ -5,7 +5,7 @@ interface Props {
   trackCount: number;
   disabled?: boolean;
   onStart: (settings: MixCreate) => void;
-  // Crossfade đã lưu theo project — chuỗi tự động Suno→Mix→Video cũng dùng số
+  // Crossfade đã lưu theo project — chuỗi tự động Suno→Mix cũng dùng số
   // này. Mixset: mỗi bài phát 1 lần nên không còn ô Duration (giữ số đã lưu
   // để API cũ vẫn nhận đủ trường).
   savedDuration?: number;
@@ -66,7 +66,7 @@ export default function MixSettingsPanel({
 
       <p className="text-xs text-gray-500">
         🎶 Mixset: mỗi bài phát <b>1 lần</b> theo thứ tự ở tab ③ Lời bài hát — độ dài
-        video = tổng độ dài các bài (trừ phần crossfade nối bài).
+        bản mix = tổng độ dài các bài (trừ phần crossfade nối bài).
       </p>
 
       <Row label="Sample Rate">

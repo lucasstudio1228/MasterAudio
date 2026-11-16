@@ -1,7 +1,7 @@
 """Tình trạng từng project trên trang danh sách: đã xong / đang ở giai đoạn nào.
 
-Chuỗi 1 sản phẩm: Nhạc (Suno hoặc import) → Mix → Ảnh → Clip → Video final →
-Nháp YouTube → Short. Mỗi bước được chấm từ dữ liệu THẬT (DB + file trên đĩa +
+Chuỗi 1 sản phẩm (Cover Audio Tool): Nhạc (Suno hoặc import) → Mix (Mix Set;
+bài lẻ không cần mix). Mỗi bước được chấm từ dữ liệu THẬT (DB + file trên đĩa +
 job đang chạy trong bộ nhớ), không tin cờ "đã chạy". Chỉ đọc — không tạo thư
 mục, không ffprobe (gọi mỗi vài giây cho mọi project).
 """
@@ -12,34 +12,17 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
-from backend.models import (BatchRun, Mix, Project, SunoBatch, Track,
-                            YoutubeUpload)
+from backend.models import BatchRun, Mix, Project, SunoBatch, Track
 
 STEPS = (
     ("music", "Nhạc"),
     ("mix", "Mix"),
-    ("images", "Ảnh"),
-    ("clips", "Clip"),
-    ("final", "Video"),
-    ("youtube", "Nháp YT"),
-    ("short", "Short"),
 )
 _LABEL = dict(STEPS)
 # Tên đầy đủ cho dòng trạng thái.
-_DOING = {
-    "music": "tạo nhạc", "mix": "render mix", "images": "tạo ảnh",
-    "clips": "tạo clip", "final": "ghép video", "youtube": "lưu nháp YouTube",
-    "short": "tạo & lưu nháp Short",
-}
-# Job video (kind) → các bước nó bao trùm, theo thứ tự chạy.
-_KIND_STEPS = {
-    "suno": ("music",), "suno-fix": ("music",), "suno-login": (),
-    "images": ("images",), "clips": ("clips",), "assemble": ("final",),
-    "rebuild": ("final",), "remux": ("final",), "retitle": ("final",),
-    "full": ("images", "clips", "final", "youtube", "short"),
-    "continue": ("images", "clips", "final", "youtube", "short"),
-    "upload": ("youtube", "short"), "upload_short": ("short",),
-}
+_DOING = {"music": "tạo nhạc", "mix": "render mix"}
+# Job của worker Suno (kind) → các bước nó bao trùm, theo thứ tự chạy.
+_KIND_STEPS = {"suno": ("music",), "suno-fix": ("music",), "suno-login": ()}
 _ACTIVE = ("pending", "running", "paused")
 _SUNO_DONE = {"IMPORTED", "DOWNSTREAM_RUNNING", "COMPLETED"}
 _SUNO_BLOCKED = {
@@ -73,10 +56,7 @@ def _latest_batch(session: Session, pid: int) -> Optional[SunoBatch]:
 def project_progress(session: Session, project: Project, *, video_job=None,
                      mix_jobs=None, params=None, auto_short: bool = True,
                      queued_in_batch: bool = False) -> dict:
-    from backend.video import config as vconfig
-
-    pid, name = project.id, project.name
-    params = params or vconfig.PARAMS
+    pid = project.id
     steps = {key: {"key": key, "label": label, "state": "pending", "detail": ""}
              for key, label in STEPS}
 
@@ -132,36 +112,10 @@ def project_progress(session: Session, project: Project, *, video_job=None,
         mix_step.update(state="done", detail=f"{mins:.0f} phút" if mins else "")
     elif mixes and mixes[0].status == "failed":
         mix_step.update(state="error", detail=_short_text(mixes[0].error_message or "Mix lỗi"))
+    elif getattr(project, "kind", "") == "single":
+        mix_step.update(state="skipped", detail="bài lẻ không cần mix")
 
-    # ── Ảnh / clip / final ──
-    n_img = _count(vconfig.images_dir(pid, name), "*.png")
-    n_clip = _count(vconfig.clips_dir(pid, name), "clip_*.mp4")
-    final_dir = vconfig.final_dir(pid, name)
-    need_img, need_clip = params.image_count, params.total_clips
-    steps["images"]["detail"] = f"{n_img}/{need_img}"
-    steps["clips"]["detail"] = f"{n_clip}/{need_clip}"
-    if n_img >= need_img:
-        steps["images"]["state"] = "done"
-    if n_clip >= need_clip:
-        steps["clips"]["state"] = "done"
-    if (final_dir / "final.mp4").exists():
-        steps["final"].update(state="done", detail="final.mp4")
-
-    # ── YouTube ──
-    ups = session.exec(select(YoutubeUpload).where(YoutubeUpload.project_id == pid)
-                       .order_by(YoutubeUpload.id.desc())).all()
-    long_ups = [u for u in ups if not (u.video_path or "").endswith("short.mp4")]
-    short_ups = [u for u in ups if (u.video_path or "").endswith("short.mp4")]
-    for key, rows in (("youtube", long_ups), ("short", short_ups)):
-        draft = next((u for u in rows if (u.status or "") == "draft"), None)
-        if draft is not None:
-            steps[key].update(state="done", detail=draft.channel_name or "nháp")
-        elif rows and rows[0].error_message:
-            steps[key].update(state="error", detail=_short_text(rows[0].error_message))
-    if not auto_short and steps["short"]["state"] == "pending":
-        steps["short"].update(state="skipped", detail="tắt tự tạo Short")
-
-    # ── Job video đang chạy / vừa lỗi → gắn vào bước nó đang làm ──
+    # ── Job Suno đang chạy / vừa lỗi → gắn vào bước nó đang làm ──
     vjob = video_job
     if vjob is not None:
         covered = _KIND_STEPS.get(vjob.kind, ())
@@ -190,8 +144,8 @@ def project_progress(session: Session, project: Project, *, video_job=None,
             summary += f" — {live['detail']}"
         stage = live["key"]
     elif not todo:
-        state, stage = "done", "short"
-        summary = "Hoàn tất — đã lưu nháp YouTube" + (" + Short" if auto_short else "")
+        state, stage = "done", "mix"
+        summary = "Hoàn tất — đã có audio"
     else:
         first = todo[0]
         stage = first["key"]
@@ -224,13 +178,7 @@ def project_progress(session: Session, project: Project, *, video_job=None,
 def all_progress(session: Session) -> list[dict]:
     """Tình trạng mọi project (trừ project trong Thùng rác)."""
     from backend.job_manager import job_manager
-    from backend.video import config as vconfig
     from backend.video.job_manager import video_job_manager
-    try:
-        from backend.video import shorts
-        auto_short = bool(shorts.settings()["auto_short"])
-    except Exception:            # noqa: BLE001
-        auto_short = True
     with job_manager._lock:
         mix_jobs = dict(job_manager._jobs)
     with video_job_manager._lock:
@@ -256,7 +204,7 @@ def all_progress(session: Session) -> list[dict]:
         try:
             out.append(project_progress(
                 session, project, video_job=video_jobs.get(project.id),
-                mix_jobs=mix_jobs, params=vconfig.PARAMS, auto_short=auto_short,
+                mix_jobs=mix_jobs,
                 queued_in_batch=project.id in queued))
         except Exception as exc:     # noqa: BLE001 — 1 project lỗi không làm hỏng cả trang
             out.append({"project_id": project.id, "state": "unknown", "stage": "music",

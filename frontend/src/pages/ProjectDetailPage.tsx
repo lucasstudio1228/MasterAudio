@@ -11,12 +11,10 @@ import ProjectFormModal from '../components/projects/ProjectFormModal';
 import RenameProjectDialog from '../components/projects/RenameProjectDialog';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import { StemPlayerBar } from '../components/stems/StemPlayerBar';
-import VideoPanel from '../components/video/VideoPanel';
 import CoverPanel from '../components/cover/CoverPanel';
 import SourcePanel from '../components/cover/SourcePanel';
 import SunoCoverPanel from '../components/cover/SunoCoverPanel';
 import RejectedLyricsDialog from '../components/cover/RejectedLyricsDialog';
-import PublishPanel from '../components/cover/PublishPanel';
 import WorkflowStatusBar from '../components/shared/WorkflowStatusBar';
 import { useStemPlayer } from '../hooks/useStemPlayer';
 import { useProject, useUpdateProject } from '../api/projects';
@@ -24,14 +22,13 @@ import { useTracks, useDeleteTrack } from '../api/tracks';
 import { useMixes, useCreateMix, useDeleteMix } from '../api/mixes';
 import type { Mix, MixCreate } from '../types';
 
-// Thứ tự theo workflow cover: tải bài gốc → Suno cover → lời → mix → video → duyệt & đăng.
-type Tab = 'source' | 'suno' | 'lyrics' | 'audio' | 'video' | 'publish';
+// Thứ tự theo workflow cover: tải bài gốc → Suno cover → lời → mix.
+type Tab = 'source' | 'suno' | 'lyrics' | 'audio';
 const TABS: { key: Tab; label: string }[] = [
   { key: 'source', label: '① Tải nhạc gốc' },
   { key: 'suno', label: '② Suno Cover' },
   { key: 'lyrics', label: '③ Lời bài hát' },
   { key: 'audio', label: '④ Mix' },
-  // Cover Audio Tool: không có ⑤ Video / ⑥ Duyệt & đăng.
 ];
 const isTab = (t: string | null): t is Tab => TABS.some((x) => x.key === t);
 
@@ -67,7 +64,7 @@ export default function ProjectDetailPage() {
     if (isTab(urlTab)) setTab(urlTab);
   }, [urlTab, projectId]);
   const isSingle = project?.kind === 'single';
-  // Track lẻ không tạo mix: mọi đường dẫn cũ tới tab Mix đều chuyển thẳng Video.
+  // Track lẻ không tạo mix: đường dẫn cũ tới tab Mix chuyển sang tab Lời bài hát.
   useEffect(() => {
     if (isSingle && tab === 'audio') setTab('lyrics');
   }, [isSingle, tab]);
@@ -123,7 +120,7 @@ export default function ProjectDetailPage() {
           </Link>
           <button
             onClick={() => setRenaming(true)}
-            title="Đổi tên project + chữ tiêu đề trên thumbnail/intro"
+            title="Đổi tên project"
             className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-gray-200 hover:bg-white/10"
           >
             ✏️ Đổi tên
@@ -172,7 +169,7 @@ export default function ProjectDetailPage() {
           </div>
           {/* Left column: Tracks */}
           <div className="space-y-4">
-            <Section title={`Bài trong video (${trackList.length})`}>
+            <Section title={`Bài trong project (${trackList.length})`}>
               <TrackList tracks={trackList} onDelete={(tid) => {
                 if (window.confirm('Đưa bài này vào thùng rác? Bạn có thể khôi phục lại sau.')) {
                   deleteTrack.mutate(tid);
@@ -182,7 +179,6 @@ export default function ProjectDetailPage() {
             <Section title="Thêm file nhạc khác">
               <AddTracksPanel
                 projectId={projectId}
-                onGoToVideo={() => setTab('lyrics')}
               />
             </Section>
 
@@ -214,9 +210,7 @@ export default function ProjectDetailPage() {
 
       {tab === 'lyrics' && <CoverPanel projectId={projectId} />}
 
-      {tab === 'video' && <VideoPanel projectId={projectId} />}
 
-      {tab === 'publish' && <PublishPanel onGoToVideo={() => setTab('video')} />}
 
       {editing && (
         <ProjectFormModal
@@ -239,7 +233,6 @@ export default function ProjectDetailPage() {
         projectId={projectId}
         currentName={project.name}
         onClose={() => setRenaming(false)}
-        onJobStarted={() => setTab('video')}
       />
 
       {activeMixId !== null && (

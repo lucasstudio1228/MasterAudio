@@ -372,26 +372,6 @@ def open_project_folder(project_id: int, what: str = "audio",
     return {"ok": True, "path": target}
 
 
-@router.post("/batch", response_model=BatchRunResponse)
-def create_batch(data: BatchCreate):
-    """Sinh N ý tưởng phân biệt (AI, KHÔNG tốn credit Suno) → tạo N project cùng
-    batch_id → chạy TUẦN TỰ trọn pipeline (Suno→Mix→Video→đăng nháp) cho từng cái.
-    Cảnh báo ngân sách + xác nhận đã thực hiện ở phía UI trước khi gọi."""
-    from backend import batch_service
-    try:
-        return batch_service.create_batch(
-            count=data.count, instrument=data.instrument,
-            music_style=data.music_style, video_style=data.video_style,
-            music_line=data.music_line, theme=data.theme, target_tracks=data.target_tracks,
-            intro_mode=data.intro_mode, cast_mode=data.cast_mode,
-            max_create_actions=data.max_create_actions,
-            channel_name=data.channel_name, channel_id=data.channel_id,
-            mix_duration_minutes=data.mix_duration_minutes,
-        )
-    except RuntimeError as exc:
-        raise HTTPException(422, str(exc)) from exc
-
-
 @router.get("/instruments")
 def instrument_catalog():
     """Danh mục nhạc cụ + thể loại cho form New Project (đơn lẻ và hàng loạt)."""
@@ -401,21 +381,6 @@ def instrument_catalog():
         "genres": [{"key": g["key"], "label": g["label"],
                     "bpm": list(g["bpm"]), "beatless": g["beatless"]}
                    for g in music_spec.GENRES],
-    }
-
-
-@router.get("/batch/styles")
-def batch_styles():
-    """Danh sách phong cách ảnh cho form tạo lô (chưa có project nên không dùng
-    được /api/projects/{id}/video/styles). Cùng nguồn video/config.STYLES."""
-    from backend.video import config as video_config
-    return {
-        "default": video_config.DEFAULT_STYLE,
-        "styles": [
-            {"key": key, "icon": s.get("icon", ""),
-             "label": s.get("label", key), "desc": s.get("desc", "")}
-            for key, s in video_config.STYLES.items()
-        ],
     }
 
 
@@ -550,30 +515,10 @@ def rename(project_id: int, data: ProjectRename,
            session: Session = Depends(get_session)):
     """Đổi tên project (kèm thư mục media, đường dẫn DB, tiêu đề prompt), rồi
     tuỳ `refresh` cập nhật CHỮ tiêu đề trên thumbnail + intro video:
-    none = chỉ đổi tên · text = vẽ lại chữ + ghép lại video ·
-    regen = tạo lại ảnh bìa (máy ảnh mặc định Muse.ai) + clip 00 rồi như text."""
-    from backend.video import config as vconfig
-    from backend.video import service as vservice
-    from backend.video.job_manager import video_job_manager
+    Bản Cover Audio Tool chỉ đổi tên (không còn thumbnail/video để vẽ lại)."""
     project = get_project_or_404(session, project_id)
-    refresh = data.refresh or "none"
-    if refresh not in ("none", "text", "regen"):
-        raise HTTPException(400, "refresh phải là none | text | regen.")
-    if refresh != "none" and video_job_manager.is_busy():
-        raise HTTPException(409, "Đang có 1 tác vụ video chạy — chờ xong rồi "
-                                 "đổi tên kèm cập nhật thumbnail.")
-    if refresh == "regen" and not (
-            vconfig.images_dir(project_id, project.name) / "prompts.json").exists():
-        raise HTTPException(400, "Project chưa có bộ prompt/ảnh — chưa thể tạo "
-                                 "lại ảnh bìa. Chọn «Chỉ đổi tên».")
     info = _do_rename(session, project, data.name)
-    job = None
-    if refresh != "none":
-        video_job_manager.submit(project_id, "retitle", vservice.retitle_video,
-                                 project.name, project.video_style,
-                                 refresh == "regen")
-        job = "retitle"
-    return {**info, "job": job, "project": to_response(session, project)}
+    return {**info, "job": None, "project": to_response(session, project)}
 
 
 @router.delete("/{project_id}")

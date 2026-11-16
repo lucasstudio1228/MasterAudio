@@ -68,24 +68,7 @@ def _maybe_trigger_auto_video(project_id: int, project_name: str,
     dựng video (ảnh → clip → ghép → MP4 vào media/<project>/final/). Import cục
     bộ để tránh vòng import và để lỗi ở nhánh video không làm hỏng việc lưu mix.
     """
-    from backend.edition import AUDIO_ONLY
-    if AUDIO_ONLY:
-        return      # Cover Audio Tool: mix xong là xong, không dựng video.
-    try:
-        from backend.video.job_manager import video_job_manager
-        from backend.video import service as video_service
-
-        if video_job_manager.is_busy():
-            # Đang có tác vụ video chạy — bỏ qua auto để không chen ngang.
-            return
-        topic = (project_name or "meditation").strip()
-        video_job_manager.submit(
-            project_id, "full", video_service.run_full_video,
-            topic, audio_path, None, project_name, (idea or None), style_key,
-        )
-    except Exception:
-        # Auto-video là tính năng phụ — không được làm sập callback mix.
-        pass
+    return      # Cover Audio Tool: mix xong là xong, không dựng video.
 
 
 def _on_success(mix_id: int, result: dict, force_video: bool = False) -> None:

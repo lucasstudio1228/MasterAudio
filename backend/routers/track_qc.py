@@ -168,25 +168,3 @@ def patch_mix(project_id: int, db: Session = Depends(get_session)):
         raise HTTPException(409, str(e))
     return {"ok": True, "mix_id": mix_id}
 
-
-@router.post("/remux")
-def remux(project_id: int, db: Session = Depends(get_session)):
-    """Thay nhạc final.mp4 bằng bản vá mới nhất (khi lúc vá xong worker video bận)."""
-    p = _project(db, project_id)
-    if video_job_manager.is_busy():
-        raise HTTPException(409, "Đang có 1 tác vụ (video/suno) chạy. Vui lòng đợi.")
-    patched = db.exec(select(Mix).where(
-        Mix.project_id == project_id, Mix.status == "completed",
-        Mix.title.like("Vá mix #%")).order_by(Mix.created_at.desc())).first()
-    if patched is None or not patched.output_dir:
-        raise HTTPException(409, "Chưa có bản mix đã vá.")
-    try:
-        base_id = int(patched.title.split("#", 1)[1].split()[0])
-        base = db.get(Mix, base_id)
-        base_total = base.total_duration_seconds if base else None
-    except (ValueError, IndexError):
-        base_total = None
-    video_job_manager.submit(project_id, "remux", mix_patch.replace_final_audio,
-                             str(Path(patched.output_dir) / "mix.wav"), p.name,
-                             base_total)
-    return {"ok": True}
