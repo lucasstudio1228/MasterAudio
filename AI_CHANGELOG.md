@@ -122,3 +122,12 @@
 - **Kiểm thử:** `wrap_lyric` với câu 4/9/16/0 từ; `build_srt` câu 10 và 11 từ ra 2 dòng đúng; test API (.srt từng bài) PASS trên bản sao.
 - **Kết quả:** đạt; đã chép sang bản 8200.
 - **Tồn đọng:** SRT không mang được khoảng cách dòng — người dùng chỉnh «Khoảng cách dòng» trong CapCut (đã ghi trong HUONG_DAN).
+
+## 2026-11-17 — Liên kết sang bản đầy đủ Music-Cover + update an toàn hơn
+
+- **Yêu cầu:** "up lên github với đầy đủ hướng dẫn sử dụng cho cả 2 phiên bản" (MasterAudio = bản âm thanh, Music-Cover = tool chính).
+- **Nguyên nhân:** hướng dẫn chưa trỏ tới bản đầy đủ; `apply_update.ps1` báo lỗi robocopy 16 nếu bản cài thiếu thư mục `frontend`/`backend`.
+- **File đã đổi:** `README.md`, `HUONG_DAN.md` (thêm ghi chú + link tới https://github.com/lucasstudio1228/Music-Cover), `patch/apply_update.ps1` (bước sao lưu chỉ chạy khi thư mục tồn tại), `AI_CHANGELOG.md`.
+- **Trước:** không có link sang bản video; update dừng giữa chừng nếu thiếu thư mục. **Sau:** có link; update bỏ qua phần sao lưu thiếu và chạy tiếp.
+- **Kiểm thử:** chạy `apply_update.ps1` trên bản cài giả (có `data/app.db`, `media`): dữ liệu giữ nguyên, mã + `frontend/dist` mới được chép, file data còn thiếu được thêm.
+- **Kết quả:** đạt. **Tồn đọng:** không.

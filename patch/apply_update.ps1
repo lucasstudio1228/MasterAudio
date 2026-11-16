@@ -18,8 +18,8 @@ function Copy-Tree([string]$From, [string]$To, [string[]]$Extra) {
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $backup = Join-Path $Dst "_ban_cu_truoc_cap_nhat\$stamp"
 Write-Host "  - Sao luu ma nguon cu vao _ban_cu_truoc_cap_nhat\$stamp"
-Copy-Tree (Join-Path $Dst 'backend') (Join-Path $backup 'backend') @('/XD', '__pycache__')
-Copy-Tree (Join-Path $Dst 'frontend') (Join-Path $backup 'frontend') @('/XD', (Join-Path $Dst 'frontend\node_modules'))
+if (Test-Path -LiteralPath (Join-Path $Dst 'backend')) { Copy-Tree (Join-Path $Dst 'backend') (Join-Path $backup 'backend') @('/XD', '__pycache__') }
+if (Test-Path -LiteralPath (Join-Path $Dst 'frontend')) { Copy-Tree (Join-Path $Dst 'frontend') (Join-Path $backup 'frontend') @('/XD', (Join-Path $Dst 'frontend\node_modules')) }
 Get-ChildItem -LiteralPath $Dst -File | Where-Object { $_.Extension -in '.py', '.bat', '.command', '.txt', '.md' } |
     ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $backup }
 

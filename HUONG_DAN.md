@@ -3,6 +3,9 @@
 Hướng dẫn **dùng tool hằng ngày**. Cách tải, cài đặt, cập nhật và sửa lỗi cài đặt: xem
 **[README.md](README.md)**.
 
+> Tool này chỉ làm phần âm thanh. Muốn làm cả video + nháp YouTube, dùng bản đầy đủ
+> **[Music-Cover](https://github.com/lucasstudio1228/Music-Cover)** (có hướng dẫn riêng trong repo đó).
+
 ## Mở và đóng tool
 
 - **Mở:** bấm đúp **Cover Music by Lucas Studio** ngoài Desktop (hoặc `CoverMusic.exe` trong thư

@@ -4,6 +4,10 @@ Tool làm **phần âm thanh** cho nhạc cover: từ bài gốc (hoặc bản c
 cover đã master, đều âm lượng → file mix `.wav` kèm lời `.srt` cho CapCut. Không có phần dựng
 video / đăng YouTube. (Tên cũ: *Cover Audio Tool* — repo MasterAudio.)
 
+> Cần làm **trọn gói video + lưu nháp YouTube** (ảnh bìa, clip động, video có lời chạy)?
+> Dùng bản đầy đủ **[Cover Nhạc Tool (Music-Cover)](https://github.com/lucasstudio1228/Music-Cover)**. Bản đó chạy cổng 8100
+> và dùng song song được với tool này.
+
 | Bước | Tab trong tool | Việc làm |
 |---|---|---|
 | ① | **Tải nhạc gốc** | Tìm và tải bài gốc + lời (nhaccuatui / YouTube Music) |
@@ -52,7 +56,8 @@ cần trình duyệt, không có cửa sổ đen).
 
 - **Đóng cửa sổ = tắt tool.** Nếu đang có việc chạy (Suno, mix…), tool hỏi lại trước khi đóng.
 - Cách cũ vẫn dùng được: bấm đúp **`start.bat`** → trình duyệt mở **http://localhost:8200**.
-- Tool chạy cổng **8200**, nên dùng song song được với tool Cover nhạc đầy đủ (cổng 8100).
+- Tool chạy cổng **8200**, nên dùng song song được với tool Cover nhạc đầy đủ
+  ([Music-Cover](https://github.com/lucasstudio1228/Music-Cover), cổng 8100).
 
 **Lần đầu mở tool:** bấm **⚙ Settings** →
 - **Đăng nhập Suno** và **nhaccuatui** (mỗi người tự đăng nhập tài khoản của mình).
