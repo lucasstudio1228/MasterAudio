@@ -1,8 +1,5 @@
 """CRUD cho /api/projects."""
-import io
 import re
-import zipfile
-from xml.etree import ElementTree
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlmodel import Session, select
@@ -226,52 +223,9 @@ def create_project(data: ProjectCreate, session: Session = Depends(get_session))
 
 # ---------- Batch: sản xuất hàng loạt N sản phẩm YouTube ----------
 def _read_mixset_lines(filename: str, payload: bytes) -> list[str]:
-    """Đọc mỗi dòng/đoạn văn trong TXT hoặc DOCX thành một truy vấn bài hát."""
-    if len(payload) > 2 * 1024 * 1024:
-        raise ValueError("File danh sách vượt quá 2 MB.")
-    suffix = (filename or "").lower().rsplit(".", 1)[-1]
-    if suffix == "txt":
-        text = None
-        for encoding in ("utf-8-sig", "utf-16", "cp1258"):
-            try:
-                text = payload.decode(encoding)
-                break
-            except UnicodeDecodeError:
-                pass
-        if text is None:
-            raise ValueError("Không đọc được file TXT; hãy lưu file ở UTF-8.")
-        raw = text.splitlines()
-    elif suffix == "docx":
-        try:
-            with zipfile.ZipFile(io.BytesIO(payload)) as archive:
-                info = archive.getinfo("word/document.xml")
-                if info.file_size > 8 * 1024 * 1024:
-                    raise ValueError("Nội dung DOCX quá lớn.")
-                xml = archive.read(info)
-            root = ElementTree.fromstring(xml)
-            ns = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
-            raw = []
-            for paragraph in root.iter(ns + "p"):
-                part = ""
-                for node in paragraph.iter():
-                    if node.tag == ns + "t":
-                        part += node.text or ""
-                    elif node.tag in (ns + "br", ns + "cr"):
-                        raw.append(part)
-                        part = ""
-                raw.append(part)
-        except (zipfile.BadZipFile, KeyError, ElementTree.ParseError) as exc:
-            raise ValueError("File DOCX không hợp lệ hoặc đã hỏng.") from exc
-    else:
-        raise ValueError("Chỉ hỗ trợ file .txt hoặc .docx.")
-    lines = []
-    for value in raw:
-        value = re.sub(r"^\s*(?:[-*•]|\d+[.)])\s*", "", value).strip()
-        if value:
-            lines.append(value)
-    if not lines:
-        raise ValueError("File chưa có dòng bài hát nào.")
-    return lines
+    """Đọc file danh sách (txt/docx/doc/xlsx/xls/csv) → mỗi bài 1 dòng."""
+    from backend.song_list import read_song_lines
+    return read_song_lines(filename, payload)
 
 
 @router.post("/mixset", response_model=BatchRunResponse)
@@ -326,6 +280,64 @@ async def create_singles(
             creative_instrument=creative_instrument, audio_only=audio_only)
     except (RuntimeError, ValueError) as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+@router.post("/from-list")
+async def create_from_list(
+    file: UploadFile = File(...), kind: str = Form("mixset"), name: str = Form(""),
+    music_style: str = Form(...), music_line: str = Form(""),
+    creative_instrument: bool = Form(True),
+    session: Session = Depends(get_session),
+):
+    """«Chỉ tạo, tôi tự chạy»: đọc file danh sách → tạo sẵn project (Mix Set: 1
+    project đủ các bài; Track lẻ: mỗi bài 1 project) với các bài ở trạng thái
+    DỪNG — không tải bài, không chạy Suno. Người dùng tự bấm từng bước hoặc
+    bấm 🎧 Chạy tự động khi muốn."""
+    from backend.cover.style_prompt import NO_CREATIVE_INSTRUMENT
+    from backend.models import SourceSong
+    from backend.video import channel_looks
+    try:
+        raw = _read_mixset_lines(file.filename or "", await file.read())
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    kind = "single" if kind == "single" else "mixset"
+    name, music_style = (name or "").strip(), (music_style or "").strip()
+    music_line = (music_line or "").strip()
+    lines = list(dict.fromkeys(" ".join(x.split()) for x in raw if x.strip()))
+    if kind == "mixset" and not name:
+        raise HTTPException(422, "Thiếu tên Mix Set.")
+    if not music_style:
+        raise HTTPException(422, "Thiếu thể loại nhạc.")
+    if not 1 <= len(lines) <= 50:
+        raise HTTPException(422, f"Danh sách phải có từ 1 đến 50 bài (file có {len(lines)}).")
+    bad = next((x for x in lines if not re.search(r"\s[-–—]\s", x)), None)
+    if bad:
+        raise HTTPException(422, f"Dòng sai định dạng: «{bad}» — mỗi dòng phải là "
+                                 "«Tên bài - Ca sĩ» hoặc «Ca sĩ - Tên bài».")
+    style_key = channel_looks.resolve_video_style(
+        "channel", "", music_style, channel_id=None, music_line=music_line)
+    instrument = "" if creative_instrument else NO_CREATIVE_INSTRUMENT
+
+    def new_project(pname: str) -> Project:
+        project = Project(
+            name=pname, description="", video_style=style_key, instrument="",
+            music_style=music_style, music_line=music_line,
+            creative_instrument=bool(creative_instrument), music_source="local",
+            auto_video=False, auto_upload=False, kind=kind)
+        session.add(project)
+        session.flush()
+        return project
+
+    ids: list[int] = []
+    groups = [(name, lines)] if kind == "mixset" else [(line, [line]) for line in lines]
+    for pname, songs in groups:
+        project = new_project(pname)
+        ids.append(project.id)
+        for pos, line in enumerate(songs, 1):
+            session.add(SourceSong(project_id=project.id, position=pos, query=line,
+                                   status="stopped", featured_instrument=instrument))
+    session.commit()
+    return {"kind": kind, "project_ids": ids, "songs": len(lines)}
 
 
 def _project_folders(session: Session, project_id: int) -> dict:

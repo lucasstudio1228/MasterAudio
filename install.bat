@@ -80,13 +80,13 @@ if not exist ".env" (
 
 REM --- File .exe mo tool trong cua so ung dung + loi tat Desktop ---
 echo.
-echo Tao CoverAudioTool.exe va loi tat ngoai Desktop...
+echo Tao CoverMusic.exe va loi tat ngoai Desktop...
 powershell -NoProfile -ExecutionPolicy Bypass -File "launcher_exe\setup_app.ps1" -Dir "%CD%"
 
 echo.
 echo ============================================================
-echo   CAI DAT XONG! Bam dup "Cover Audio Tool" ngoai Desktop
-echo   (hoac CoverAudioTool.exe / start.bat trong thu muc nay).
+echo   CAI DAT XONG! Bam dup "Cover Music by Lucas Studio" ngoai Desktop
+echo   (hoac CoverMusic.exe / start.bat trong thu muc nay).
 echo ============================================================
 echo.
 pause

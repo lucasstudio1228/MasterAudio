@@ -1,23 +1,35 @@
-# MasterAudio — Cover Audio Tool
+# Cover Music by Lucas Studio
 
-Tool làm **phần âm thanh** cho nhạc cover: từ bài gốc → bản cover Suno đã master → file mix
-`.wav` kèm lời `.srt` cho CapCut. Không có phần dựng video / đăng YouTube.
+Tool làm **phần âm thanh** cho nhạc cover: từ bài gốc (hoặc bản cover bạn đã có sẵn) → bản
+cover đã master, đều âm lượng → file mix `.wav` kèm lời `.srt` cho CapCut. Không có phần dựng
+video / đăng YouTube. (Tên cũ: *Cover Audio Tool* — repo MasterAudio.)
 
 | Bước | Tab trong tool | Việc làm |
 |---|---|---|
 | ① | **Tải nhạc gốc** | Tìm và tải bài gốc + lời (nhaccuatui / YouTube Music) |
-| ② | **Suno Cover** | Tạo bản cover bằng Suno, tải về và master |
-| ③ | **Lời bài hát** | Kiểm tra / căn lời theo nhạc |
-| ④ | **Mix** | Cân âm lượng, ghép các bài thành 1 bản mix dài (chỉ project Mix Set) |
+| ② | **Suno Cover** | Tạo bản cover bằng Suno — **hoặc kéo thả bản cover có sẵn** — rồi master |
+| ③ | **Lời bài hát** | AI căn lời theo nhạc, tải file lời `.srt` |
+| ④ | **Mix** | Cân âm lượng, ghép các bài thành 1 bản mix dài (project Mix Set) |
 
-Cách dùng chi tiết từng bước: xem **[HUONG_DAN.md](HUONG_DAN.md)**.
+Cách dùng chi tiết: xem **[HUONG_DAN.md](HUONG_DAN.md)**.
+
+## Có gì mới
+
+- **Tạo project mà không chạy tự động:** khi tạo Mix Set / Track lẻ từ danh sách, chọn
+  **✍️ Chỉ tạo, tôi tự chạy** → tool chỉ tạo sẵn project + danh sách bài, không tải, không dùng
+  Suno, không tốn credit. Bạn tự bấm từng bước hoặc bấm **🎧 Chạy tự động** lúc nào muốn.
+- **📂 Project từ bài cover có sẵn:** kéo thả các file cover bạn đã có (và file lời) vào tool →
+  tool tự **master + đồng bộ âm lượng** và **AI căn lời** để xuất file lời `.srt`.
+- **File danh sách bài nhận thêm Excel:** `.xlsx`, `.xls`, `.csv` — ngoài `.docx`, `.doc`, `.txt`.
+  Kéo thả file danh sách vào form được luôn.
+- Đổi tên tool thành **Cover Music by Lucas Studio** (lối tắt Desktop và file `CoverMusic.exe`).
 
 ---
 
 ## 1. Tải tool về
 
 Trên trang GitHub bấm **Code → Download ZIP** rồi giải nén vào nơi bạn muốn để tool
-(ví dụ `D:\Tools\Cover Audio Tool`). Người biết git có thể dùng
+(ví dụ `D:\Tools\Cover Music`). Người biết git có thể dùng
 `git clone https://github.com/lucasstudio1228/MasterAudio.git`.
 
 ## 2. Cài đặt trên Windows (chỉ làm 1 lần)
@@ -30,13 +42,13 @@ Trên trang GitHub bấm **Code → Download ZIP** rồi giải nén vào nơi b
 
 **Cài:** bấm đúp **`install.bat`** trong thư mục tool, chờ chữ **CAI DAT XONG** (lần đầu
 khoảng 10–20 phút). Cài xong sẽ có:
-- File **`CoverAudioTool.exe`** trong thư mục tool.
-- Lối tắt **Cover Audio Tool** (icon tai nghe tím) ngoài **Desktop**.
+- File **`CoverMusic.exe`** trong thư mục tool.
+- Lối tắt **Cover Music by Lucas Studio** (icon tai nghe tím) ngoài **Desktop**.
 
 ## 3. Mở tool
 
-Bấm đúp **Cover Audio Tool** ngoài Desktop → tool mở trong **cửa sổ riêng** (không cần
-trình duyệt, không có cửa sổ đen).
+Bấm đúp **Cover Music by Lucas Studio** ngoài Desktop → tool mở trong **cửa sổ riêng** (không
+cần trình duyệt, không có cửa sổ đen).
 
 - **Đóng cửa sổ = tắt tool.** Nếu đang có việc chạy (Suno, mix…), tool hỏi lại trước khi đóng.
 - Cách cũ vẫn dùng được: bấm đúp **`start.bat`** → trình duyệt mở **http://localhost:8200**.
@@ -46,6 +58,8 @@ trình duyệt, không có cửa sổ đen).
 - **Đăng nhập Suno** và **nhaccuatui** (mỗi người tự đăng nhập tài khoản của mình).
 - Dán **API Key** của mình nếu dùng AI (địa chỉ API và model đã điền sẵn).
 
+> Chỉ dùng bài cover có sẵn (không làm cover trên Suno)? Không cần đăng nhập Suno / nhaccuatui.
+
 ## 4. Cập nhật lên bản mới (không cần xoá bản cũ, không mất dữ liệu)
 
 Project, nhạc, setting, đăng nhập Suno/nhaccuatui và API key **được giữ nguyên**.
@@ -53,11 +67,15 @@ Project, nhạc, setting, đăng nhập Suno/nhaccuatui và API key **được g
 1. Chờ các việc đang chạy xong, rồi **đóng tool** (đóng cửa sổ tool hoặc cửa sổ `start.bat`).
    Tool đang mở thì file cập nhật sẽ dừng và nhắc bạn đóng.
 2. Bấm đúp **`update.bat`** trong thư mục tool → chờ chữ **CAP NHAT XONG**.
-3. Mở lại tool bằng lối tắt **Cover Audio Tool** ngoài Desktop.
+3. Mở lại tool bằng lối tắt **Cover Music by Lucas Studio** ngoài Desktop.
 
 `update.bat` tự làm: tải bản mới từ GitHub → chép đè phần mã → xoá file cũ không còn dùng →
-cài thêm thư viện nếu bản mới cần → tạo lại `CoverAudioTool.exe` và lối tắt Desktop. Mã cũ được
-cất trong thư mục `_ban_cu_truoc_cap_nhat\` (xoá đi cũng được khi tool chạy ổn).
+cài thêm thư viện nếu bản mới cần → tạo `CoverMusic.exe` và lối tắt Desktop mới. Mã cũ được cất
+trong thư mục `_ban_cu_truoc_cap_nhat\` (xoá đi cũng được khi tool chạy ổn).
+
+**Cập nhật từ bản tên cũ "Cover Audio Tool":** sau khi chạy `update.bat`, lối tắt cũ
+**Cover Audio Tool** và file `CoverAudioTool.exe` được tự dọn, thay bằng lối tắt **Cover Music by
+Lucas Studio** và `CoverMusic.exe`. Nếu lối tắt cũ vẫn còn trên Desktop thì xoá tay đi.
 
 **Bản cũ chưa có `update.bat`?** Mở link
 https://raw.githubusercontent.com/lucasstudio1228/MasterAudio/main/update.bat → chuột phải →
@@ -68,12 +86,13 @@ Sau đó làm như các bước trên.
 
 | Hiện tượng | Cách xử lý |
 |---|---|
-| Không thấy lối tắt / mất file `CoverAudioTool.exe` | Chạy lại `update.bat` (tự tạo lại file `.exe` và lối tắt) |
+| Không thấy lối tắt / mất file `CoverMusic.exe` | Chạy lại `update.bat` (tự tạo lại file `.exe` và lối tắt) |
 | Lần đầu mở, tool hỏi cài "thư viện cửa sổ ứng dụng" | Bấm **OK** (cần mạng, ~1 phút) |
 | Cửa sổ tool báo "Không mở được tool" | Chụp màn hình gửi người hỗ trợ (kèm file `data\logs\app_server.log`) |
 | Cửa sổ tool không hiện / màn hình trắng | Dùng tạm `start.bat` (mở bằng trình duyệt) |
 | `update.bat` báo "Tool dang chay" | Đóng tool rồi bấm lại `update.bat` |
 | "Khong tim thay ffmpeg" | `winget install Gyan.FFmpeg`, đóng rồi mở lại tool |
+| File danh sách `.xls` / `.doc` (bản Office cũ) báo không đọc được | Mở file bằng Excel/Word → **Lưu thành** → chọn `.xlsx` / `.docx` rồi chọn lại |
 
 ---
 
@@ -119,7 +138,7 @@ Mac chip M chạy được nhưng tách giọng (Demucs) chậm hơn máy Window
   Mac Intel) và các thư viện trong `constraints-mac-intel.txt`. Lần cài đầu mất **10–20 phút**.
 - Cài xong, cửa sổ phải hiện dòng **`OK: torch 2.2.2 - numpy 1.26.4`**. Nếu thấy
   *[CANH BAO]* / *[LOI]* thì chụp màn hình gửi người hỗ trợ.
-- **Tốc độ:** Mac Intel chỉ chạy AI bằng CPU nên bước **③ Lời bài hát** (AI nghe lời) và tách
+- **Tốc độ:** Mac Intel chỉ chạy AI bằng CPU nên bước **③ Lời bài hát** (AI căn lời) và tách
   giọng **chậm hơn nhiều** (có thể vài phút mỗi bài). ①, ②, ④ chạy bình thường. Nên cắm sạc
   và để máy không ngủ khi đang chạy.
 - **macOS cũ (Homebrew báo không hỗ trợ):**
@@ -156,11 +175,11 @@ Mac chip M chạy được nhưng tách giọng (Demucs) chậm hơn máy Window
 nhập / nhập key của mình.
 
 **Khi chia sẻ thư mục tool cho người khác**, bỏ ra: `.venv`, `.browser_profile_*`, `media`,
-`outputs`, `stems`, `data\app.db`, `data\webview` và file `CoverAudioTool.exe` (máy kia tự tạo
+`outputs`, `stems`, `data\app.db`, `data\webview` và file `CoverMusic.exe` (máy kia tự tạo
 lại khi chạy `install.bat`). Cách gọn nhất là gửi link GitHub này.
 
 ## Lưu ý về lyrics trên Suno
 
 Lyrics gửi lên Suno giữ nguyên chữ tự nhiên (không thay dấu cách bằng `_`, không làm biến dạng
 chữ, không có dòng tên bài / ca sĩ). Bài bị Suno báo bản quyền sẽ được đánh dấu `rejected` và
-tool chuyển sang bài tiếp theo.
+tool chuyển sang bài tiếp theo. Chỉ nhập bản cover / lời bạn tự làm hoặc được phép sử dụng.

@@ -1,4 +1,4 @@
-# Cover Audio Tool - chep ban moi (Src) de len thu muc tool (Dst).
+# Cover Music by Lucas Studio - chep ban moi (Src) de len thu muc tool (Dst).
 # Goi tu update.bat. Khong dung toi .venv, data (chi them file con thieu),
 # media, outputs, stems, Projects, Trash, .env, .browser_profile*.
 param(

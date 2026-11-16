@@ -259,6 +259,35 @@ def export_lrc(song_id: int, session: Session = Depends(get_session)):
     return to_lrc(load_lines(song.lyrics_json), song.title, song.artist)
 
 
+@router.get("/songs/{song_id}/srt")
+def export_song_srt(song_id: int, session: Session = Depends(get_session)):
+    """Lời 1 bài (.srt) theo đúng thời gian của chính bản cover đó — dùng cho bài
+    lẻ / bài nhập sẵn khi chưa ghép Mix. Chỉ có lời, không tên bài/ca sĩ."""
+    from urllib.parse import quote
+    from fastapi.responses import Response
+    from backend.cover.lyrics_export import LINE_HOLD_SEC, MIN_LINE_SEC, _clean, build_srt
+    from backend.cover.mix_export import _safe
+    song, _ = _get_song(session, song_id)
+    rows = [(float(l["start"]), float(l["end"]), _clean(l.get("text", "")))
+            for l in load_lines(song.lyrics_json)]
+    rows = sorted(r for r in rows if r[2])
+    timeline = []
+    for i, (t0, t1, text) in enumerate(rows):
+        nxt = rows[i + 1][0] if i + 1 < len(rows) else None
+        end = max(t1, t0 + 0.4) + LINE_HOLD_SEC
+        if nxt is not None:
+            end = min(end, nxt)
+        if end - t0 >= MIN_LINE_SEC:
+            timeline.append((max(t0, 0.0), end, text))
+    if not timeline:
+        raise HTTPException(404, "Bài này chưa có lời đã căn thời gian — bấm «AI căn lời» trước.")
+    body = ("\ufeff" + build_srt(timeline)).replace("\n", "\r\n").encode("utf-8")
+    fname = f"{_safe(song.title or f'bai {song_id}')}.srt"
+    return Response(body, media_type="application/x-subrip", headers={
+        "Content-Disposition": f"attachment; filename=\"lyrics.srt\"; "
+                               f"filename*=UTF-8''{quote(fname)}"})
+
+
 @router.get("/projects/{project_id}/lyrics-srt")
 def export_lyrics_srt(project_id: int, mix_id: Optional[int] = None,
                       session: Session = Depends(get_session)):

@@ -158,10 +158,11 @@ def project_progress(session: Session, project: Project, *, video_job=None,
         elif first["state"] == "waiting":
             state = "stopped"
             summary = f"Dừng giữa chừng ở bước {_LABEL[stage]} ({first['detail']})"
-        elif queued_in_batch and done_n == 0:
+        elif queued_in_batch and not any(s["state"] == "done" for s in order):
             state = "queued"
             summary = "Chờ tới lượt trong lô sản xuất hàng loạt"
-        elif done_n == 0:
+        elif not any(s["state"] == "done" for s in order):
+            # Bước «bỏ qua» (Mix của Track lẻ) không tính là đã làm gì.
             state = "new"
             summary = "Chưa bắt đầu"
         else:

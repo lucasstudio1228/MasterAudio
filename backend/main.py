@@ -25,7 +25,7 @@ from backend.routers.sources import router as sources_router    # noqa: E402
 from backend.stem_job_manager import stem_job_manager           # noqa: E402
 from backend.video.job_manager import video_job_manager         # noqa: E402
 
-app = FastAPI(title="Cover Audio Tool API")
+app = FastAPI(title="Cover Music by Lucas Studio API")
 
 _raw_origins = os.getenv("CORS_ORIGINS", "http://localhost:5184")
 CORS_ORIGINS = [o.strip() for o in _raw_origins.split(",")]

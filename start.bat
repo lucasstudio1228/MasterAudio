@@ -1,6 +1,7 @@
 @echo off
 REM ============================================================
-REM  COVER AUDIO TOOL - START (double-click de chay)
+REM  COVER MUSIC BY LUCAS STUDIO - START (double-click de chay)
+REM APP_NAME: Cover Music by Lucas Studio
 REM  Chay server tren cong 8200 va tu mo trinh duyet.
 REM  (Khac cong 8100 cua tool Cover nhac day du -> chay song song duoc)
 REM ============================================================

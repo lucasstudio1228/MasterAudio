@@ -590,6 +590,7 @@ def import_covers(source_id: int, files: list[UploadFile] = File(...),
 def add_own_cover(project_id: int, title: str = Form(...), artist: str = Form(""),
                   lyrics: str = Form(""), files: list[UploadFile] = File(...),
                   original: Optional[UploadFile] = File(None),
+                  auto_master: bool = Form(False), auto_align: bool = Form(False),
                   session: Session = Depends(get_session)):
     """«Nhập bài cover tôi đã làm»: file bản cover (1 hoặc nhiều) + tên bài, ca sĩ,
     lời — kèm file bài gốc nếu có (để so khi kiểm tra lỗi / tạo lại trên Suno).
@@ -627,8 +628,34 @@ def add_own_cover(project_id: int, title: str = Form(...), artist: str = Form(""
             p.unlink(missing_ok=True)
         raise
     cover_qc.review_async(project.id)
-    return {"id": src.id,
-            "added": [{"track_id": t.id, "filename": t.filename} for t in tracks]}
+    out = {"id": src.id,
+           "added": [{"track_id": t.id, "filename": t.filename} for t in tracks]}
+    out.update(_after_import(session, project, tracks, auto_master=auto_master,
+                             auto_align=auto_align and bool(src.lyrics_text.strip())))
+    return out
+
+
+def _after_import(session: Session, project: Project, tracks: list[Track], *,
+                  auto_master: bool, auto_align: bool) -> dict:
+    """Sau khi nhập bài cover có sẵn: master (mọi bài về cùng độ to LUFS của
+    preset master = đồng bộ âm lượng) và AI căn lời (để xuất file lời .srt).
+    Lỗi ở đây không làm hỏng việc nhập — chỉ báo lại."""
+    out: dict = {}
+    if auto_master:
+        cfg = _manual_cfg()
+        try:
+            mastering.resolve_ffmpeg(cfg)
+            files = [Path(t.filepath) for t in tracks if Path(t.filepath).is_file()]
+            if files:
+                mastering.submit(files, log=_master_log(project), cfg=cfg)
+            out["master_queued"] = len(files)
+        except mastering.MasterError as e:
+            out["master_error"] = str(e)
+    if auto_align:
+        ids = [cs.id for cs in session.exec(select(CoverSong).where(
+            CoverSong.track_id.in_([t.id for t in tracks]))).all()]
+        out["align_queued"] = align_jobs.submit(project.id, ids) if ids else 0
+    return out
 
 
 # ---------------- kiểm tra bản cover lỗi + tạo lại ----------------

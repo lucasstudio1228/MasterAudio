@@ -105,6 +105,6 @@ chmod +x start_mac.command 2>/dev/null
 
 echo
 echo "============================================================"
-echo "  CAI DAT XONG! Bam dup start_mac.command de mo Cover Audio Tool."
+echo "  CAI DAT XONG! Bam dup start_mac.command de mo Cover Music by Lucas Studio."
 echo "============================================================"
 pause_exit 0

@@ -93,3 +93,22 @@
 - **Kiểm thử:** đối chiếu nhãn giao diện với mã (tên tab, + New Project, 3 kiểu tạo project, nút TaskBar, 🗑/♻, 📂 Mở thư mục nghe audio, ⬇ Lời cho CapCut, Mix History, Settings), install.bat/update.bat/apply_update.ps1/app_window.py; kiểm tra tệp UTF-8, không có ký tự điều khiển.
 - **Kết quả:** chỉ đổi tài liệu, không đổi mã.
 - **Tồn đọng:** không.
+
+## 2026-11-17 — Tạo project không chạy auto, kéo thả bài cover có sẵn + file lời .srt, danh sách bài từ Excel, đổi tên «Cover Music by Lucas Studio»
+
+- **Yêu cầu:** (1) thêm chế độ tạo bài / project thủ công, không chạy auto — người dùng chọn «Cả hai»: tạo từ danh sách mà không chạy + kiểu «Project từ bài cover có sẵn»; (2) kéo thả bài cover có sẵn thay vì «choose a file», bài nhập vào phải master + đồng bộ âm lượng, ghép lời để tạo file lời; (3) file danh sách bài nhận thêm Excel; đặt tên tool «Cover Music by Lucas Studio»; đẩy lên GitHub và viết lại README.
+- **Nguyên nhân:** tạo Mix Set / Track lẻ từ danh sách luôn chạy auto ngay (tốn credit Suno); nhập bài cover có sẵn chỉ có ô chọn 1 file, không tự master; không có file lời .srt riêng từng bài; danh sách chỉ nhận .txt/.docx/.doc; tiến độ Track lẻ chưa chạy hiện nhầm «Đã xong Mix».
+- **File đã đổi:**
+  - Mới `backend/song_list.py`: đọc danh sách bài từ .txt/.docx/.doc (dò chữ UTF-16, best-effort)/.xlsx/.xlsm (đọc XML trong zip, trang tính đầu)/.xls (cần xlrd, không có thì khuyên lưu .xlsx)/.csv; bỏ hàng tiêu đề và cột STT; 2 cột ghép thành «Tên bài - Ca sĩ».
+  - `backend/routers/projects.py`: `_read_mixset_lines` dùng `song_list`; mới `POST /api/projects/from-list` (tạo project + danh sách bài trạng thái «stopped», không chạy).
+  - `backend/routers/sources.py`: `add_own_cover` thêm `auto_master` / `auto_align`; trả `master_queued`, `master_error`, `align_queued`.
+  - `backend/routers/cover.py`: mới `GET /api/cover/songs/{id}/srt` (lời riêng 1 bài, UTF-8 BOM, CRLF, không có dòng tên bài).
+  - `backend/project_progress.py`: nhãn tiến độ «Chưa bắt đầu» khi chưa có bước nào xong.
+  - Đổi tên: `backend/edition.py`, `backend/main.py`, `frontend/index.html`, `Sidebar.tsx`, `start.bat` (dòng `REM APP_NAME:`), `app_window.py` (đọc tên từ dòng đó), `launcher_exe/setup_app.ps1` (tạo `CoverMusic.exe` + lối tắt «Cover Music by Lucas Studio», dọn lối tắt/exe tên cũ trỏ vào đúng thư mục), thông báo trong `install.bat`, `update.bat`, `install_mac.command`, `update_mac.command`, `patch/apply_update.ps1`.
+  - Frontend: `api/projects.ts` (`useCreateFromList`), `api/sources.ts` (autoMaster/autoAlign), `api/cover.ts` (`songSrtUrl`), `ProjectFormModal.tsx` (4 kiểu tạo, lựa chọn «Chỉ tạo, tôi tự chạy» / «Tạo & chạy tự động», ô kéo thả file danh sách), `ProjectsPage.tsx`, mới `components/cover/CoverDropPanel.tsx` (kéo thả nhiều bài, gom bản (1)/(2), tự đọc «Tên bài - Ca sĩ», gắn file lời .txt/.lrc, tick master + đồng bộ âm lượng / AI căn lời), `SunoCoverPanel.tsx`, `CoverPanel.tsx` (nút ⬇ .srt từng bài); build lại `frontend/dist`.
+  - `README.md`, `HUONG_DAN.md` viết lại theo bản mới.
+- **Trước:** tạo từ danh sách = chạy auto ngay; nhập cover 1 file/lần, không master; chỉ có .lrc từng bài; danh sách không nhận Excel; tên «Cover Audio Tool».
+- **Sau:** mặc định «Chỉ tạo, tôi tự chạy» (không tốn credit), chạy auto là tuỳ chọn; kiểu «📂 Project từ bài cover có sẵn» mở thẳng ô kéo thả; bài nhập được master về cùng LUFS + AI căn lời; mỗi bài có ⬇ .srt; danh sách nhận Excel/CSV; tên «Cover Music by Lucas Studio».
+- **Kiểm thử:** parser 7/7 PASS (xlsx có STT + tiêu đề, xlsx 1 cột inlineStr, CSV `;`, txt gạch đầu dòng, .doc giả lập, .xls báo lời khuyên, đuôi lạ). API trên bản sao cổng 8299 DB trống: ALL PASS (from-list mixset/single, lỗi 422, `/api/tasks/active` rỗng, nhập 2 bản WAV + auto_master → master xong cả 2, .srt 404 trước khi căn, đúng sau khi lưu lời, không có tên bài). UI trong trình duyệt: form 4 kiểu, kiểu cover có sẵn chuyển sang `?tab=suno&drop=1`, kéo thả giả lập gom đúng 2 bản + lời, nhập + master xong, tab ③ có ⬇ .srt; Track lẻ chưa chạy hiện «Chưa bắt đầu».
+- **Kết quả:** đạt; đã đồng bộ sang bản 8200 (`D:\Tools\Cover nhạc\Cover Audio Tool`).
+- **Tồn đọng:** `.xls` cần thư viện xlrd (không có thì báo lưu .xlsx); `.doc` chỉ đọc best-effort; bản 8200 chưa chạy `setup_app.ps1` nên vẫn còn `CoverAudioTool.exe` cũ tới lần update/install sau; AI căn lời khi nhập chưa chạy thử thật (chỉ thử master). Tool chính 8100 không đổi.

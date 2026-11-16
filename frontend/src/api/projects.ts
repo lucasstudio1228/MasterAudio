@@ -88,6 +88,26 @@ export function useCreateMixSet() {
   });
 }
 
+/** Tạo project từ file danh sách nhưng KHÔNG chạy tự động: các bài ở trạng thái
+ *  "đã dừng", bạn tự bấm từng bước hoặc bấm 🎧 Chạy tự động khi muốn. */
+export function useCreateFromList() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: MixSetCreate) => {
+      const body = new FormData();
+      body.append('file', data.song_file);
+      body.append('kind', data.kind === 'single' ? 'single' : 'mixset');
+      body.append('name', data.name ?? '');
+      body.append('music_style', data.music_style);
+      body.append('music_line', data.music_line ?? '');
+      body.append('creative_instrument', String(data.creative_instrument ?? true));
+      return (await api.post<{ kind: string; project_ids: number[]; songs: number }>(
+        '/api/projects/from-list', body, { timeout: 120_000 })).data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+  });
+}
+
 /** Thư mục audio đã xong (để nghe) và file video final (nếu đã render). */
 export function useProjectFolders(projectId: number) {
   return useQuery<{ audio: string | null; video: string | null }>({

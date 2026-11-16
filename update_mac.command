@@ -89,6 +89,6 @@ fi
 rm -rf "$WORK"
 echo
 echo "============================================================"
-echo "  CAP NHAT XONG! Bam start_mac.command de mo lai Cover Audio Tool."
+echo "  CAP NHAT XONG! Bam start_mac.command de mo lai Cover Music by Lucas Studio."
 echo "============================================================"
 pause_exit 0

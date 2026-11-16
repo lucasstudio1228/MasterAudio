@@ -70,6 +70,8 @@ export const songAudioUrl = (songId: number, v = '') =>
 export const lyricsSrtUrl = (projectId: number, mixId?: number) =>
   `${API_BASE}${base}/projects/${projectId}/lyrics-srt${mixId != null ? `?mix_id=${mixId}` : ''}`;
 export const songLrcUrl = (songId: number) => `${API_BASE}${base}/songs/${songId}/lrc`;
+/** Lời 1 bài (.srt cho CapCut) theo thời gian của chính bản cover đó. */
+export const songSrtUrl = (songId: number) => `${API_BASE}${base}/songs/${songId}/srt`;
 
 export function useCoverSettings(projectId: number) {
   return useQuery<CoverSettings>({

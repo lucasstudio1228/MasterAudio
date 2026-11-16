@@ -268,19 +268,27 @@ export function useImportCovers(projectId: number) {
 export function useOwnCover(projectId: number) {
   const done = useInvalidate(projectId);
   return useMutation({
-    mutationFn: async (v: { title: string; artist: string; lyrics: string; files: File[]; original: File | null }) => {
+    mutationFn: async (v: {
+      title: string; artist: string; lyrics: string; files: File[]; original: File | null;
+      autoMaster?: boolean; autoAlign?: boolean;
+    }) => {
       const form = new FormData();
       form.append('title', v.title);
       form.append('artist', v.artist);
       form.append('lyrics', v.lyrics);
       v.files.forEach((f) => form.append('files', f));
       if (v.original) form.append('original', v.original);
+      form.append('auto_master', String(!!v.autoMaster));
+      form.append('auto_align', String(!!v.autoAlign));
       return (
         await api.post(`${base}/projects/${projectId}/own`, form, {
           timeout: 0,
           headers: { 'Content-Type': 'multipart/form-data' },
         })
-      ).data as { id: number; added: { track_id: number; filename: string }[] };
+      ).data as {
+        id: number; added: { track_id: number; filename: string }[];
+        master_queued?: number; master_error?: string; align_queued?: number;
+      };
     },
     onSuccess: done,
   });

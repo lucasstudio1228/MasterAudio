@@ -10,6 +10,7 @@ import ConfirmDialog from '../components/shared/ConfirmDialog';
 import {
   useActiveBatch,
   useBulkDeleteProjects,
+  useCreateFromList,
   useCreateMixSet,
   useCreateProject,
   useDeleteProject,
@@ -31,6 +32,7 @@ export default function ProjectsPage() {
   const createProject = useCreateProject();
   const navigate = useNavigate();
   const createMixSet = useCreateMixSet();
+  const createFromList = useCreateFromList();
   const deleteProject = useDeleteProject();
   const bulkDelete = useBulkDeleteProjects();
   const { data: usage, error: usageError } = useProjectDiskUsage();
@@ -116,6 +118,8 @@ export default function ProjectsPage() {
   const batchError =
     (createMixSet.error as any)?.response?.data?.detail ??
     (createMixSet.error as Error | null)?.message ??
+    (createFromList.error as any)?.response?.data?.detail ??
+    (createFromList.error as Error | null)?.message ??
     null;
 
   return (
@@ -287,29 +291,39 @@ export default function ProjectsPage() {
       <ProjectFormModal
         open={showForm}
         saving={createProject.isPending}
-        batchSaving={createMixSet.isPending}
+        batchSaving={createMixSet.isPending || createFromList.isPending}
         batchError={batchError}
-        onSubmit={(data, { autoRun }) =>
+        onSubmit={(data, { autoRun, ownCovers }) =>
           createProject.mutate(data, {
             onSuccess: (p) => {
               setShowForm(false);
               // Tự bấm «✨ AI viết prompt & CHẠY TỰ ĐỘNG» ở tab Suno của project mới.
               if (autoRun) navigate(`/projects/${p.id}?tab=suno&autorun=1`);
+              // Project từ bài cover có sẵn → mở thẳng ô kéo thả file cover.
+              else if (ownCovers) navigate(`/projects/${p.id}?tab=suno&drop=1`);
             },
           })
         }
-        onSubmitBatch={(data) =>
-          createMixSet.mutate(data, {
+        onSubmitBatch={(data, { autoRun }) =>
+          autoRun ? createMixSet.mutate(data, {
             onSuccess: (run) => {
               localStorage.setItem(BATCH_KEY_STORAGE, run.batch_key);
               setBatchKey(run.batch_key);
               setGroup(data.kind === 'single' ? 'single' : 'mixset');
               setShowForm(false);
             },
+          }) : createFromList.mutate(data, {
+            // «Chỉ tạo, tôi tự chạy»: Mix Set → mở project vừa tạo; Track lẻ → xem nhóm.
+            onSuccess: (res) => {
+              setShowForm(false);
+              setGroup(res.kind === 'single' ? 'single' : 'mixset');
+              if (res.project_ids.length === 1) navigate(`/projects/${res.project_ids[0]}?tab=source`);
+            },
           })
         }
         onClose={() => {
           createMixSet.reset();
+          createFromList.reset();
           setShowForm(false);
         }}
       />

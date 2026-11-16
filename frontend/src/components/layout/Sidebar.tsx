@@ -7,7 +7,10 @@ export default function Sidebar() {
     <aside className="flex w-56 flex-col border-r border-white/5 bg-surface p-4">
       <div className="mb-8 flex items-center gap-2 px-2 text-lg font-bold text-white">
         <span>🎵</span>
-        <span>Cover Audio</span>
+        <span className="leading-tight">
+          Cover Music
+          <span className="block text-xs font-normal text-gray-400">by Lucas Studio</span>
+        </span>
       </div>
       <nav className="flex flex-col gap-1">
         <Link

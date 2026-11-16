@@ -1,12 +1,30 @@
-# Tao CoverAudioTool.exe (mo tool trong cua so ung dung) + loi tat ngoai Desktop.
+# Tao CoverMusic.exe (mo tool trong cua so ung dung) + loi tat ngoai Desktop
+# "Cover Music by Lucas Studio". Ban cu ten "Cover Audio Tool" / CoverAudioTool.exe
+# duoc don di (chi khi loi tat cu tro vao dung thu muc tool nay).
 # Goi tu install.bat va patch\apply_update.ps1. Loi o day KHONG lam hong cai dat:
 # van dung start.bat duoc.
 param(
     [Parameter(Mandatory = $true)][string]$Dir,
-    [string]$Name = 'CoverAudioTool',
-    [string]$Shortcut = 'Cover Audio Tool'
+    [string]$Name = 'CoverMusic',
+    [string]$Shortcut = 'Cover Music by Lucas Studio'
 )
 $ErrorActionPreference = 'Stop'
+# Doi ten tu ban cu: xoa CoverAudioTool.exe + loi tat "Cover Audio Tool" tro vao thu muc nay.
+try {
+    $oldExe = Join-Path $Dir 'CoverAudioTool.exe'
+    if ($Name -ne 'CoverAudioTool') {
+        $oldLnk = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Cover Audio Tool.lnk'
+        if (Test-Path -LiteralPath $oldLnk) {
+            $target = (New-Object -ComObject WScript.Shell).CreateShortcut($oldLnk).TargetPath
+            $sameDir = $false
+            try { $sameDir = ([IO.Path]::GetFileName($target) -ieq 'CoverAudioTool.exe') -and (Test-Path -LiteralPath $oldExe) } catch {}
+            if ($sameDir) { Remove-Item -LiteralPath $oldLnk -Force; Write-Host "  - Da xoa loi tat cu 'Cover Audio Tool'" }
+        }
+        if (Test-Path -LiteralPath $oldExe) { Remove-Item -LiteralPath $oldExe -Force -ErrorAction SilentlyContinue }
+    }
+} catch {
+    Write-Host "  [CANH BAO] Khong don duoc loi tat / exe ten cu ($_)."
+}
 try {
     $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
     if (-not (Test-Path -LiteralPath $csc)) { $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }

@@ -31,6 +31,7 @@ import {
   useTrackRecovery,
 } from '../../api/tracks';
 import MasterPanel, { CoverMasterLine } from './MasterPanel';
+import CoverDropPanel from './CoverDropPanel';
 import OwnCoverPanel from './OwnCoverPanel';
 import SunoLoginPanel from './SunoLoginPanel';
 import { CoverImportButton } from './SourcePanel';
@@ -820,6 +821,7 @@ export default function SunoCoverPanel({ projectId, onGoToSource }:
     <>
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <div className="space-y-4">
+        <CoverDropPanel projectId={projectId} />
         <div className={card}>
           <h2 className={h2}>② Suno Cover — tool tự làm</h2>
           {data && <SunoControls projectId={projectId} items={activeItems} worker={worker} />}

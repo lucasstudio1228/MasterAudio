@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOpenProjectFolder, useProjectFolders } from '../../api/projects';
 import {
   songAudioUrl,
-  songLrcUrl,
+  songLrcUrl, songSrtUrl,
   lyricsSrtUrl,
   useAlignAll,
   useAlignSong,
@@ -349,6 +349,8 @@ function SongEditor({ projectId, song, busy }: { projectId: number; song: CoverS
               </button>
             ))}
             {lines.length > 0 && <a className={btn} href={songLrcUrl(song.id)} target="_blank" rel="noreferrer">⬇ .lrc</a>}
+            {lines.length > 0 && <a className={btn} href={songSrtUrl(song.id)} target="_blank" rel="noreferrer"
+              title="File lời của riêng bài này cho CapCut — chỉ có lời, khớp thời gian bản cover">⬇ .srt</a>}
           </div>
           {lines.length === 0 ? (
             <p className="rounded-lg bg-surface-2 p-4 text-sm text-gray-400">

@@ -32,9 +32,13 @@ def _read_start_bat() -> tuple[int, str]:
         m = re.search(r"--port\s+(\d+)", txt)
         if m:
             port = int(m.group(1))
-        m = re.search(r"REM\s+(.+?)\s+-\s+START", txt)
-        if m:
-            name = m.group(1).strip().title()
+        m = re.search(r"REM\s+APP_NAME:\s*(.+)", txt)
+        if m:                       # tên hiển thị ghi sẵn (giữ nguyên hoa/thường)
+            name = m.group(1).strip()
+        else:
+            m = re.search(r"REM\s+(.+?)\s+-\s+START", txt)
+            if m:
+                name = m.group(1).strip().title()
     except OSError:
         pass
     return port, name
