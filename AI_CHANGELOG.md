@@ -140,3 +140,14 @@
 - **Trước:** dán lời xong bài vẫn «Bỏ qua · thiếu lời». **Sau:** lời không trống → bài đã có file gốc chuyển «Đã tải» + tự xuất WAV tempo 4.5× chạy nền; bài chưa có file → tự xếp hàng tải bài gốc (giữ nguyên lời vừa dán). Lời trống thì vẫn để loại. Không bấm gì trên Suno.
 - **Kiểm thử:** bản sao code + DB tạm (không mở trình duyệt): bài có file → `done`, hết lỗi, tempo 4.5× có file; bài chưa có file → được xếp tải, lời giữ nguyên; lời trống → vẫn `skipped_no_lyrics`. ALL PASS cho cả bản chính và bản 8200.
 - **Tồn đọng:** lô Mix Set đã chạy qua bước bỏ bài thì không tự thêm lại bài vào lô đó — bấm chạy Suno cho bài sau khi nhận lại.
+
+## 2026-11-18 23:50 — Sửa tool bấm nhầm trong giao diện Suno (nhảy sang trang Billing)
+
+- **Yêu cầu:** khi ấn «Tạo lại» hoặc chạy auto, tool bấm nhầm trong giao diện Suno; chạy thử và theo dõi.
+- **Nguyên nhân:** bài «Có Duyên Không Nợ» (2 lần 21:23 và 23:28) sau bước «Đã xoá form Create» trình duyệt nằm ở trang Billing/Subscription của Suno, tool vẫn đi tìm nút «Audio» trên trang đó rồi báo lỗi. `_real_click` bấm bằng toạ độ chuột mà không kiểm tra phần tử ở điểm đó có đúng là nút cần bấm không (bỏ qua kiểm tra «bị che» của Playwright) → khi popup/banner che hoặc layout vừa dịch, cú bấm rơi vào phần tử khác. `clear_form` còn bấm Confirm/Yes trong BẤT KỲ hộp thoại nào đang mở. Chạy lại thử (dry-run, 23:35) thì đi qua bình thường → lỗi xảy ra lúc có lúc không.
+- **File đã đổi:** `backend/video/suno_driver.py` (`_real_click` + `_hit_ok`), `backend/cover/suno_cover.py` (`clear_form`, `_left_create_page`, `_prepare_create_form`, `prepare_cover`).
+- **Trước:** bấm toạ độ mù; xác nhận mọi hộp thoại; rời trang Create vẫn làm tiếp.
+- **Sau:** chỉ bấm chuột thật khi phần tử trên cùng tại điểm bấm đúng là nút đích (đo lại 1 lần, vẫn lệch thì để `locator.click()` có kiểm tra che xử lý); chỉ bấm Confirm khi hộp thoại có chữ clear/reset; sau mỗi bước Advanced / xoá form / More Options / Duration kiểm tra URL còn ở `/create`, lệch thì chụp ảnh `left_create_page`, mở lại trang Create làm lại 1 lần, vẫn lệch thì dừng rõ ràng, không bấm gì trên trang lạ.
+- **Kiểm thử:** py_compile 4 bản; test Playwright trang giả (nút thường bấm được, nút bị link «Upgrade» che KHÔNG bị bấm, phát hiện rời trang Create) → ALL PASS trên tool chính và Cover Audio Tool. Chạy dry-run thật bài #175 trên Suno: qua bước xoá form bình thường (trước khi sửa; đã dừng job thử).
+- **Kết quả:** đã áp dụng cho tool chính, Cover Audio Tool và 2 repo (chưa push).
+- **Tồn đọng:** cần khởi động lại tool để nhận code mới; theo dõi log xem có dòng «bị phần tử khác che» / «rời trang Create» để biết phần tử nào hay che.

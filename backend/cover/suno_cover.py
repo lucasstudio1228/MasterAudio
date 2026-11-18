@@ -814,6 +814,10 @@ class CoverDriver(SunoDriver):
             return
         self._wait(700)
         dlg = self._top_dialog()
+        if dlg and not re.search(r"clear|reset", dlg.get("text") or "", re.I):
+            self._log("Sau nút xoá form hiện hộp thoại lạ — không bấm gì trong đó: "
+                      f"«{(dlg.get('text') or '')[:120]}»")
+            dlg = None
         if dlg:
             for b in dlg["buttons"]:
                 if b["enabled"] and b["text"].strip().lower() in (
@@ -1806,6 +1810,42 @@ class CoverDriver(SunoDriver):
             "Influence») — tool KHÔNG bấm Create. Gửi ảnh chụp này để cập nhật tool.",
             "no_cover_mode")
 
+    def _left_create_page(self, step: str) -> bool:
+        """True (và ghi log + ảnh) nếu trình duyệt không còn ở trang /create."""
+        try:
+            from urllib.parse import urlparse
+            path = urlparse(self.page.url or "").path or "/"
+        except Exception:
+            return False
+        if path.rstrip("/").startswith("/create"):
+            return False
+        shot = self.save_debug("left_create_page")
+        self._log(f"⚠ Suno đã rời trang Create sau bước {step} (đang ở {path}) — "
+                  "không bấm gì trên trang này, quay lại trang Create."
+                  + (f" (ảnh: {shot})" if shot else ""))
+        return True
+
+    def _prepare_create_form(self) -> None:
+        """Advanced → xoá form → More Options → Duration Auto. Sau mỗi bước bấm
+        kiểm tra vẫn ở /create (LIVE 2026-11-18: có lần nhảy sang trang Billing
+        rồi tool đi tìm nút Audio trên trang đó)."""
+        for attempt in range(2):
+            if attempt:
+                self.open_create_page()
+            steps = (("chọn Advanced", self.select_advanced_mode),
+                     ("xoá form", self.clear_form),
+                     ("mở More Options", self.ensure_more_options),
+                     ("Duration Auto", self.ensure_duration_auto))
+            for name, fn in steps:
+                fn()
+                if self._left_create_page(name):
+                    break
+            else:
+                return
+        raise self._ui_changed(
+            "Suno cứ tự chuyển khỏi trang Create khi chuẩn bị form — tool dừng, "
+            "không bấm gì thêm. Gửi ảnh chụp này để kiểm tra.", "left_create_page")
+
     # ── trọn bộ form cho 1 bài ───────────────────────────────────
     def prepare_cover(self, original: Path, title: str, lyrics: str,
                       gender: str, min_credits: int,
@@ -1829,10 +1869,7 @@ class CoverDriver(SunoDriver):
             raise SunoBudgetError(
                 f"Suno chỉ còn {credits} credit (mỗi bài cover cần ~{min_credits}). "
                 "Tool không tự mua thêm — nạp/chờ credit rồi chạy lại.")
-        self.select_advanced_mode()
-        self.clear_form()
-        self.ensure_more_options()
-        self.ensure_duration_auto()         # có thể tải lại trang → làm TRƯỚC khi đính file
+        self._prepare_create_form()
         source_song_id = (editor_song_id or "").strip()
         if source_song_id:
             self._log(f"Tiếp tục từ bài Editor đã lưu ({source_song_id}); không upload lại.")

@@ -1442,6 +1442,21 @@ class SunoDriver:
                 self._log(f"CẢNH BÁO: nút Create vẫn bị che bởi {blocker}.")
 
     # ── tiện ích: định vị nút ⋯ (More options) của 1 bài ─────────
+    _JS_HIT_OK = r"""(el, p) => {
+      const t = document.elementFromPoint(p[0], p[1]);
+      if (!t) return false;
+      if (el === t || el.contains(t)) return true;
+      for (let n = el; n; n = n.parentNode || n.host) if (n === t) return true;
+      return false;
+    }"""
+
+    def _hit_ok(self, loc, cx: float, cy: float) -> bool:
+        """True nếu điểm (cx, cy) đang trúng chính `loc` (hoặc con/vỏ bọc của nó)."""
+        try:
+            return bool(loc.evaluate(self._JS_HIT_OK, [cx, cy]))
+        except Exception:
+            return True     # không đo được (iframe…) → giữ cách bấm cũ
+
     def _real_click(self, loc) -> bool:
         """Click bằng toạ độ CHUỘT THẬT (mouse.move → click). Một số menu Radix
         trong Studio (đặc biệt nút 'Export') chỉ mở bằng chuột thật + pointermove,
@@ -1458,6 +1473,25 @@ class SunoDriver:
             return False
         cx = box["x"] + box["width"] / 2
         cy = box["y"] + box["height"] / 2
+        # LIVE 2026-11-18: click toạ độ không qua kiểm tra «bị che» của
+        # Playwright — khi popup/banner che hoặc layout vừa dịch, cú bấm rơi
+        # vào phần tử khác (đã mở nhầm trang Billing/Upgrade của Suno). Chỉ bấm
+        # khi phần tử trên cùng tại điểm đó đúng là nút đích; lệch thì đo lại
+        # 1 lần, vẫn lệch → trả False để locator.click() (có kiểm tra che) lo.
+        if not self._hit_ok(loc, cx, cy):
+            self._wait(400)
+            try:
+                box = loc.bounding_box()
+            except Exception:
+                box = None
+            if not box:
+                return False
+            cx = box["x"] + box["width"] / 2
+            cy = box["y"] + box["height"] / 2
+            if not self._hit_ok(loc, cx, cy):
+                self._log("Nút cần bấm đang bị phần tử khác che — bỏ click chuột "
+                          "thật để tránh bấm nhầm.")
+                return False
         try:
             self.page.mouse.move(cx, cy)
             self._wait(150)
