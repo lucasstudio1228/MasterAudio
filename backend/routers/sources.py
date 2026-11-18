@@ -380,8 +380,31 @@ def update_source(source_id: int, data: SourceIn, session: Session = Depends(get
         src.suno_song_ids = src.suno_editor_song_id = ""
     for k, v in patch.items():
         setattr(src, k, v.strip() if k != "lyrics_text" else v.replace("\r", ""))
+    # Bài bị loại vì thiếu lời: người dùng dán lời → nhận lại bài.
+    revive = (not research and "lyrics_text" in patch
+              and src.status == "skipped_no_lyrics" and bool(lyrics_key(src.lyrics_text)))
+    revive_has_file = bool(src.file_path and Path(src.file_path).is_file())
+    if revive:
+        if revive_has_file:
+            src.status, src.error = "done", None
+        else:
+            src.status, src.error = "stopped", None
     session.add(src)
     session.commit()
+    if revive:
+        if revive_has_file:
+            # Chuẩn bị bản tempo cho tab Suno Cover (chạy nền, không bấm gì trên Suno).
+            import threading
+
+            def _prep(sid: int = src.id) -> None:
+                try:
+                    nct_jobs._ensure_tempo_export(sid)
+                except Exception as exc:  # noqa: BLE001
+                    nct_jobs._finish(sid, "done",
+                                     f"Đã nhận lời nhưng tự động xuất tempo lỗi: {exc}")
+            threading.Thread(target=_prep, daemon=True).start()
+        else:
+            research = True          # chưa có file gốc → tải về (giữ nguyên lời vừa dán)
     if "lyrics_text" in patch and not had_lyrics and (src.lyrics_text or "").strip():
         # Mix Set đang chờ lời: mỗi lần bổ sung thành công sẽ reset đồng hồ 5 phút.
         from backend import batch_service
