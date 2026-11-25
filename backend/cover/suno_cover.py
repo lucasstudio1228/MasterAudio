@@ -370,6 +370,24 @@ _JS_MARK_UPLOAD_MORE = r"""(fileStem) => {
   return true;
 }"""
 
+# LIVE 2026-11-25: mã bài (UUID) của hàng UPLOAD đã đánh dấu, lấy từ link /song/<id>
+# trong chính hàng đó — để mở thẳng Editor khi cú bấm «Open in Editor» không ăn.
+_JS_UPLOAD_ROW_SONG_ID = r"""() => {
+  const more = document.querySelector("button[data-tool-upload-more='1']");
+  if (!more) return null;
+  const sel = "button[aria-label='More options'],button[aria-label^='More options for'],button[aria-label='More']";
+  const re = /\/song\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+  let row = more.parentElement;
+  for (let depth=0; depth<10 && row; depth++, row=row.parentElement) {
+    if ([...row.querySelectorAll(sel)].some(b => b !== more)) break;
+    for (const a of row.querySelectorAll('a[href]')) {
+      const m = (a.getAttribute('href') || '').match(re);
+      if (m) return m[1];
+    }
+  }
+  return null;
+}"""
+
 # Đánh dấu mục menu đang hiện có dòng đầu ĐÚNG bằng nhãn (không phân biệt hoa
 # thường). Dòng sau là huy hiệu «Pro»/«New» nên chỉ so dòng đầu.
 _JS_MARK_MENU_ITEM = r"""(label) => {
@@ -1176,6 +1194,8 @@ class CoverDriver(SunoDriver):
                 return
             self._log(f"{problem} (lần {attempt}/3); menu đang thấy: "
                       f"{self._menu_items_text()} — mở lại.")
+        if self._goto_editor(song_id):
+            return
         raise self._ui_changed(
             f"Audio upload: {problem} sau 3 lần mở menu ⋯.", "no_open_in_editor_menu")
 
@@ -1268,6 +1288,36 @@ class CoverDriver(SunoDriver):
                 pass
         return f"Đã bấm «Open in Editor» nhưng Editor chưa mở (trang: {now_url or '?'})"
 
+    def _goto_editor(self, song_id: str) -> bool:
+        """Dự phòng: mở thẳng trang Editor của đúng bài (https://suno.com/edit/<id>).
+
+        LIVE 2026-11-25 (bài #181): Suno hiện đủ «Open in Editor», tool bấm trúng
+        nhưng trang vẫn đứng ở /create → hết giờ và dừng cả hàng đợi. Địa chỉ
+        /edit/<id> chính là chỗ nút đó dẫn tới, mở thẳng thì vào Editor ổn định.
+        """
+        if not song_id:
+            return False
+        url = f"https://suno.com/edit/{song_id}"
+        self._log(f"Mở thẳng Suno Editor của bài {song_id} (nút «Open in Editor» không chuyển trang).")
+        try:
+            self.page.goto(url, wait_until="domcontentloaded", timeout=45000)
+        except Exception as e:
+            self._log(f"Không mở được {url} ({type(e).__name__}).")
+            return False
+        if self._wait_editor_url(15000):
+            self._wait(2500)
+            self._log("Đã vào Suno Editor bằng địa chỉ trực tiếp.")
+            return True
+        return False
+
+    def _upload_row_song_id(self, path: Path) -> str:
+        if not self._mark_upload_row(path):
+            return ""
+        try:
+            return str(self.page.evaluate(_JS_UPLOAD_ROW_SONG_ID) or "")
+        except Exception:
+            return ""
+
     def _wait_editor_url(self, timeout_ms: int) -> bool:
         """True khi trang đã sang Suno Editor (URL https://suno.com/edit/<id>)."""
         deadline = time.time() + timeout_ms / 1000.0
@@ -1322,6 +1372,10 @@ class CoverDriver(SunoDriver):
             if problem:
                 self._log(f"Hàng UPLOAD: {problem} (lần {attempt}/{rounds}); menu đang "
                           f"thấy: {self._menu_items_text()} — mở lại.")
+                if problem.startswith("Đã bấm «Open in Editor»"):
+                    self._dismiss_popups()
+                    if self._goto_editor(self._upload_row_song_id(path)):
+                        return True
                 continue
             self._log("Đã mở hàng UPLOAD theo tên file → Edit → Open in Editor.")
             return True

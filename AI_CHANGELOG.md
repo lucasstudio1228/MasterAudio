@@ -248,3 +248,19 @@
 - **Kiểm thử:** `unittest tests.test_cover_style_prompt`: 11 test OK.
 - **Kết quả:** code trên máy đã đúng. Backend đang chạy vẫn dùng code cũ cho tới lần mở lại tool sau.
 - **Tồn đọng:** phải đẩy bản sửa lên GitHub trước khi mở lại tool. Nếu chưa đẩy, `CoverNhacTool.exe` sẽ tự cập nhật và ghi đè lần nữa.
+
+## 2026-11-25 23:20 — Sửa lỗi «Upload xong nhưng không thấy nút Open in Editor» (dừng cả hàng đợi)
+
+- **Yêu cầu:** "Suno vẫn lỗi. Kiểm tra backend và yêu cầu bạn giám sát để chuẩn hoá quy trình" — giám sát lượt chạy project #37 «Tâm Sự Đời Tôi».
+- **Nguyên nhân:** bài #181 đã tải file lên Suno. Tool mở được ⋯ → Edit và bấm trúng «Open in Editor», nhưng trang vẫn đứng ở /create (2 lần, 22:58 và 22:59). Hết 3 phút chờ thì tool dừng cả hàng đợi. Lần cuối mở Editor từ file mới tải lên thành công là ngày 19/11. Khi thử lại bằng profile của tool lúc tool rảnh, nút này lúc được lúc không. Còn mở thẳng `https://suno.com/edit/<mã bài>` (chính là chỗ nút dẫn tới) thì vào Editor và thấy ô Tempo.
+- **File đã đổi:**
+  - `backend/cover/suno_cover.py` (tool chính, Cover Audio Tool, 2 repo): thêm `_JS_UPLOAD_ROW_SONG_ID` (lấy mã bài từ link `/song/<id>` trong đúng hàng UPLOAD), cùng các hàm `_upload_row_song_id` và `_goto_editor`. Nếu bấm «Open in Editor» mà không chuyển trang, tool mở thẳng trang Editor của đúng bài đó. `_open_editor_from_song` cũng dùng cách dự phòng này trước khi dừng.
+  - `tests/test_suno_cover.py` (tool chính + Music-Cover): thêm 2 test: có dự phòng khi bấm không chuyển trang, và không nhảy trang khi submenu chưa bung.
+  - Bản cũ cất ở `Trash/backup_truoc_sua_open_editor_20261125/`.
+- **Trước:** Suno không chuyển trang sau cú bấm thì tool dừng cả hàng đợi sau 3 phút.
+- **Sau:** tool tự mở trang Editor của đúng bài vừa tải lên rồi chờ bạn chỉnh Tempo như cũ. Không bấm Save hay Create thay bạn.
+- **Kiểm thử:**
+  - Chạy thật bằng profile Suno của tool khi tool rảnh, chỉ mở trang, không lưu hay tạo gì: lấy đúng mã fbf99504… của hàng UPLOAD #181, mở `/edit/<id>` → vào Editor, tìm thấy ô Tempo.
+  - unittest: 2 test mới OK. `test_suno_semi_manual`, `test_audio_only_mode`, `test_cover_style_prompt` OK. `test_suno_cover` chỉ còn 11 lỗi cũ có từ trước (FakeDriver thiếu `manual_editor`).
+- **Kết quả:** đã áp dụng ở 4 bản (chưa push).
+- **Tồn đọng:** phải push lên GitHub trước khi mở lại tool, vì `CoverNhacTool.exe` tự cập nhật từ GitHub. Cần chạy lại bài #37.
