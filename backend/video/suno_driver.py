@@ -723,7 +723,7 @@ class SunoDriver:
             clicked = False
             if attempt == 0:
                 clicked = self._real_click(loc)
-            if not clicked and attempt <= 1:
+            if not clicked and attempt <= 1 and not getattr(self, "_last_click_blocked", False):
                 try:
                     loc.click(timeout=3000, force=True)
                     clicked = True
@@ -1460,7 +1460,11 @@ class SunoDriver:
     def _real_click(self, loc) -> bool:
         """Click bằng toạ độ CHUỘT THẬT (mouse.move → click). Một số menu Radix
         trong Studio (đặc biệt nút 'Export') chỉ mở bằng chuột thật + pointermove,
-        KHÔNG phản hồi locator.click()/dispatch/keyboard. Trả True nếu đã click."""
+        KHÔNG phản hồi locator.click()/dispatch/keyboard. Trả True nếu đã click.
+        `self._last_click_blocked` = True khi từ chối vì nút bị che — lúc đó
+        KHÔNG được fallback sang click(force=True) (force cũng bấm theo toạ độ
+        → trúng lại phần tử che)."""
+        self._last_click_blocked = False
         try:
             loc.scroll_into_view_if_needed(timeout=3000)
         except Exception:
@@ -1491,6 +1495,7 @@ class SunoDriver:
             if not self._hit_ok(loc, cx, cy):
                 self._log("Nút cần bấm đang bị phần tử khác che — bỏ click chuột "
                           "thật để tránh bấm nhầm.")
+                self._last_click_blocked = True
                 return False
         try:
             self.page.mouse.move(cx, cy)
@@ -1766,6 +1771,8 @@ class SunoDriver:
         pages_before = set(context.pages)
         if not self._real_click(ois):
             try:
+                if getattr(self, "_last_click_blocked", False):
+                    raise RuntimeError("covered")      # force click sẽ trúng phần tử che
                 ois.click(timeout=5000, force=True)
             except Exception:
                 ois.dispatch_event("click")

@@ -151,3 +151,14 @@
 - **Kiểm thử:** py_compile 4 bản; test Playwright trang giả (nút thường bấm được, nút bị link «Upgrade» che KHÔNG bị bấm, phát hiện rời trang Create) → ALL PASS trên tool chính và Cover Audio Tool. Chạy dry-run thật bài #175 trên Suno: qua bước xoá form bình thường (trước khi sửa; đã dừng job thử).
 - **Kết quả:** đã áp dụng cho tool chính, Cover Audio Tool và 2 repo (chưa push).
 - **Tồn đọng:** cần khởi động lại tool để nhận code mới; theo dõi log xem có dòng «bị phần tử khác che» / «rời trang Create» để biết phần tử nào hay che.
+
+## 2026-11-25 — Rà lại code sửa bấm nhầm Suno: chặn nốt fallback click(force=True)
+
+- **Yêu cầu:** đọc lại toàn bộ code (bản sửa bấm nhầm Suno ngày 18/11).
+- **Nguyên nhân:** rà mọi chỗ gọi `_real_click`: `set_max_mode` và `_open_song_in_studio` khi `_real_click` trả False sẽ fallback `click(force=True)` — force cũng bấm theo toạ độ nên khi nút bị che vẫn trúng phần tử che (đúng kiểu lỗi nhảy sang Billing).
+- **File đã đổi:** `backend/video/suno_driver.py` (`_real_click` thêm cờ `_last_click_blocked`; `set_max_mode`, `_open_song_in_studio` bỏ force click khi nút bị che, dùng DOM click vào đúng phần tử).
+- **Trước:** nút bị che → bỏ click chuột thật nhưng có thể force click vào toạ độ đó.
+- **Sau:** nút bị che → không bấm theo toạ độ nữa; Max Mode dùng `el.click()`, Open in Studio dùng `dispatch_event("click")`.
+- **Kiểm thử:** py_compile 4 bản; test Playwright trang giả (nút thường bấm được, nút bị link che không bị bấm, cờ blocked = True, phát hiện rời /create) → ALL PASS. Log thật 18–19/11: chốt chặn bắt 3 lần nút «Clear all form inputs» bị che ngay sau khi chọn Advanced (đúng thời điểm lỗi cũ), các lượt đều chạy tiếp bình thường, không nhảy trang.
+- **Kết quả:** đã áp dụng cho tool chính, Cover Audio Tool và 2 repo (chưa push).
+- **Tồn đọng:** `_capture_wav_click` (luồng tải WAV) vẫn có fallback force click — không sửa theo yêu cầu không đụng phần tải WAV. Khi nút xoá form bị che, form không được xoá (lời/Styles được điền đè ở bước sau nên chưa thấy ảnh hưởng). Cần khởi động lại tool để nhận code mới.
