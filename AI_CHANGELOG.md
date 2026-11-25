@@ -264,3 +264,17 @@
   - unittest: 2 test mới OK. `test_suno_semi_manual`, `test_audio_only_mode`, `test_cover_style_prompt` OK. `test_suno_cover` chỉ còn 11 lỗi cũ có từ trước (FakeDriver thiếu `manual_editor`).
 - **Kết quả:** đã áp dụng ở 4 bản (chưa push).
 - **Tồn đọng:** phải push lên GitHub trước khi mở lại tool, vì `CoverNhacTool.exe` tự cập nhật từ GitHub. Cần chạy lại bài #37.
+
+## 2026-11-25 23:35 — Gom AGENTS.md về một bản duy nhất
+
+- **Yêu cầu:** "tổng hợp lại bản mới nhất và đưa về bản: D:\Tools\Cover nhạc\AGENTS.md . Còn lại xoá hết".
+- **Nguyên nhân:** có 10 bản AGENTS.md: tool chính, Cover Audio Tool, 6 bản trong `_ban_cu_truoc_cap_nhat`, 2 repo. Bản mới nhất là bản ở tool chính (người dùng sửa lúc 23:18).
+- **File đã đổi:**
+  - Xoá `AGENTS.md` khỏi repo Music-Cover và MasterAudio.
+  - 7 bản trên máy được chuyển vào `Trash/xoa_agents_20261125/` (khôi phục được).
+  - Giữ nguyên `D:\Tools\Cover nhạc\AGENTS.md`.
+- **Trước:** nhiều bản AGENTS.md có nội dung khác nhau. Mỗi lần cập nhật, bản trên GitHub ghi đè bản ở tool chính.
+- **Sau:** chỉ còn 1 bản ở tool chính. Cập nhật từ GitHub không còn ghi đè bản này vì repo không còn file AGENTS.md, và bản cập nhật không xoá file riêng của máy.
+- **Kiểm thử:** `find` chỉ còn `./AGENTS.md` (ngoài Trash). `git ls-files` của 2 repo không còn AGENTS.md.
+- **Kết quả:** xong.
+- **Tồn đọng:** mỗi lần cập nhật, tool vẫn sao lưu các file .md ở thư mục gốc vào `_ban_cu_truoc_cap_nhat/`, nên sẽ có bản sao lưu AGENTS.md mới xuất hiện ở đó.
