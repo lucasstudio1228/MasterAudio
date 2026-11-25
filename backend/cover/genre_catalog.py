@@ -166,9 +166,7 @@ def genre_prompt_core(*values: str) -> str:
     profile = genre_profile(*values)
     if not profile:
         raw = next((" ".join(v.split()) for v in values if (v or "").strip()), "Contemporary Pop")
-        return (f"{raw} vocal cover, genre-authentic rhythm and harmony, coherent vocal-led "
-                "arrangement, polished modern mix, no genre fusion, no instrumental solo")
-    return ", ".join((
-        f"{profile['label']} vocal cover", profile["bpm"], profile["groove"],
-        profile["music"], profile["arrangement"], profile["mix"], profile["avoid"],
-    ))
+        return raw
+    # 2026-11-25: chỉ thể loại + BPM + nhịp + nhạc cụ (thẻ ngắn, dễ hiểu với
+    # Suno). arrangement/mix/avoid vẫn giữ trong profile cho AI tham khảo.
+    return ", ".join((profile["label"], profile["bpm"], profile["groove"], profile["music"]))

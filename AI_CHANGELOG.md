@@ -162,3 +162,41 @@
 - **Kiểm thử:** py_compile 4 bản; test Playwright trang giả (nút thường bấm được, nút bị link che không bị bấm, cờ blocked = True, phát hiện rời /create) → ALL PASS. Log thật 18–19/11: chốt chặn bắt 3 lần nút «Clear all form inputs» bị che ngay sau khi chọn Advanced (đúng thời điểm lỗi cũ), các lượt đều chạy tiếp bình thường, không nhảy trang.
 - **Kết quả:** đã áp dụng cho tool chính, Cover Audio Tool và 2 repo (chưa push).
 - **Tồn đọng:** `_capture_wav_click` (luồng tải WAV) vẫn có fallback force click — không sửa theo yêu cầu không đụng phần tải WAV. Khi nút xoá form bị che, form không được xoá (lời/Styles được điền đè ở bước sau nên chưa thấy ảnh hưởng). Cần khởi động lại tool để nhận code mới.
+
+## 2026-11-25 12:30 — Sửa lỗi «Không đặt được Weirdness» (More Options không mở) + rút gọn prompt Styles
+
+- **Yêu cầu:** "hiện tại tool đang gặp trục trặc, kiểm tra backend và sửa lỗi. Ngoài ra phần prompt style trong Suno đang bị dài và rối, hãy kiểm tra lại và đưa về đơn giản để Suno dễ nhận biết và phân tích hơn".
+- **Nguyên nhân:**
+  - Bài #178 «Sầu Tím Thiệp Hồng» (11:39) dừng cả hàng đợi: «Không đặt được 'Weirdness' = 10 (đang 50)», trước đó log «Không thấy nút More Options rõ ràng». Kiểm tra trực tiếp trang Suno Create cho thấy tiêu đề «More Options» giờ là DIV thường (có mũi tên + dòng phụ «Variety»), không còn là `button`. Các selector cũ không tìm thấy nên khung không mở. Các thanh trượt nằm trong khung đóng nên không focus/kéo được.
+  - Sau khi bấm mở, `options_open()` coi thanh nằm dưới mép panel Create (có thanh cuộn riêng) là «bị cắt».
+  - Lỗi `TargetClosedError` lúc 11:33 (bài #33) là do cửa sổ trình duyệt bị đóng giữa chừng, không phải lỗi code.
+  - Styles dài khoảng 990 ký tự: ngoài hồ sơ thể loại đầy đủ (arrangement/mix/avoid), tool luôn nối thêm khóa nhạc cụ dài («no off-grid hits, no stabs, ostinato…»), khóa giọng dài («about 3 dB above instrumental…») và khóa lời («preserve the supplied lyrics exactly, never translate…»). Suno khó hiểu các câu dài; ô Styles cũng không điều khiển được lời.
+- **File đã đổi:**
+  - `backend/cover/suno_cover.py`: `ensure_more_options` thêm selector DIV/SPAN «More Options» và chờ tối đa 3 giây, cuộn thanh Weirdness vào giữa panel trước khi kiểm tra. `lyrics_lock` và `cover_styles_for_project` rút gọn.
+  - `backend/cover/genre_catalog.py`: `genre_prompt_core` chỉ còn thể loại, BPM, nhịp và nhạc cụ.
+  - `backend/cover/style_prompt.py`:
+    - Thêm thẻ ngắn `subtle <nhạc cụ>` và thẻ giọng ngắn.
+    - Tên nhạc cụ tự chọn ngắn lại.
+    - Prompt gửi AI yêu cầu 6–10 thẻ dưới 200 ký tự, không viết giọng/ngôn ngữ/câu phủ định.
+    - Bỏ thẻ giọng AI tự viết.
+    - Đuôi chống solo chỉ còn «no instrumental solo».
+    - `style_signature` lên v9 để bài cũ tự viết lại Styles ngắn.
+  - Test: `tests/test_cover_style_prompt.py`, `tests/test_genre_catalog.py`, `tests/test_music_line_prompts.py`, `tests/test_suno_cover.py` (2 test Styles vốn đã hỏng nay cập nhật theo dạng mới), `tests/test_suno_semi_manual.py` (trang giả đặt ở /create vì chốt «rời trang Create» ngày 18/11).
+  - Bản cũ cất ở `Trash/backup_truoc_sua_more_options_20261125/` trên máy.
+- **Trước:**
+  - Tool không mở được More Options, dừng hàng đợi ở bước thanh trượt.
+  - Styles ví dụ (Ballad, song ca, saxophone) khoảng 990 ký tự, nhiều câu phủ định.
+- **Sau:**
+  - Tool mở More Options và đặt Weirdness/Style Influence/Variety đúng.
+  - Styles ví dụ còn khoảng 250 ký tự: «Ballad, 68-82 BPM, slow 4/4, restrained kick and snare, spacious pulse, warm piano, acoustic guitar, soft strings, simple diatonic harmony, subtle saxophone, male and female duet vocals, sung in Vietnamese, clear upfront vocals, no instrumental solo».
+  - Dòng nhạc (thị trường) không còn đưa cụm «…-market polish» vào Styles.
+  - Chế độ «Tạo lại chỉ đổi Tempo» vẫn giữ nguyên Styles cũ của bài.
+- **Kiểm thử:**
+  - Chạy thật trên trang Suno Create bằng profile của tool, chỉ chỉnh thanh trượt, không bấm Create: mở được More Options, kết quả Weirdness=10, Style Influence=70, Variety=0; không còn log cảnh báo.
+  - unittest các file Styles, genre và music line: OK; `test_suno_semi_manual`: OK.
+  - Toàn bộ test suite: các lỗi còn lại đều có từ trước. 11 lỗi `JobTests` và stepper trong `test_suno_cover`: FakeDriver cũ thiếu tham số `manual_editor`. Ngoài ra `test_audio_tempo_master_tool`, `test_suno_wav_downloader` (lỗi import) và `test_channel_look_custom` (thumbnail).
+- **Kết quả:** đã áp dụng cho tool chính, Cover Audio Tool và 2 repo (chưa push). Bản clone Music-Cover tạm lại bị dọn thư mục Temp xóa mất file; đã khôi phục từ commit f358cb6 trước khi chép file mới.
+- **Tồn đọng:**
+  - Cần khởi động lại tool (khi không có job) để nhận code mới.
+  - Bài cũ có Styles dài đã lưu sẽ tự viết lại khi chạy Suno, trừ chế độ «chỉ đổi Tempo».
+  - Suno đang có banner «Black Friday Sale» ở đầu trang; tool không bấm vào nó.

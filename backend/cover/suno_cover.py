@@ -53,34 +53,30 @@ def _genre_key(music_style: str, cover_style: str, description: str) -> str:
 
 
 def lyrics_lock(gender: str = "", lyrics_lang: str = "", voice_word: str = "vocal") -> str:
-    """Khoá giọng + lời: hát đúng ngôn ngữ của LỜI GỐC (không phải dòng nhạc)."""
-    voice = (f"male {voice_word}" if gender == "male" else
-             f"female {voice_word}" if gender == "female" else
-             f"male-female duet {voice_word}s with clearly assigned alternating parts"
-             if gender == "duet" else f"natural {voice_word}")
+    """Thẻ giọng + ngôn ngữ hát (theo LỜI GỐC, không theo dòng nhạc).
+
+    2026-11-25: rút gọn thành vài thẻ ngắn — Suno hiểu tag ngắn tốt hơn các câu
+    dài kiểu «about 3 dB above instrumental…». Styles không điều khiển được lời
+    (lời nằm ở ô Lyrics) nên bỏ các câu «preserve lyrics/never translate»."""
+    words = f"{voice_word}s"
+    voice = (f"male {words}" if gender == "male" else
+             f"female {words}" if gender == "female" else
+             f"male and female duet {words}" if gender == "duet" else
+             f"natural {words}")
     lang = (lyrics_lang or "").strip()
-    sung = (f"sung in {lang} with clear {lang} pronunciation" if lang else
-            "sung in the original language of the supplied lyrics with clear pronunciation")
-    return (
-        f"{voice}, {sung}, bright clear full-bodied lead vocal upfront and centered about "
-        "3 dB above instrumental, crisp diction, continuous dominant lead singing, "
-        "instruments below voice, sparse fills only between phrases, no instrumental solos "
-        "or long breaks, featured parts follow the existing groove with no off-grid hits "
-        "or added percussion, preserve the supplied "
-        "lyrics exactly, never translate, no lyrics in any other language"
-    )
+    sung = f"sung in {lang}" if lang else "sung in the original language"
+    return f"{voice}, {sung}, clear upfront vocals, no instrumental solo"
 
 
 def cover_styles_for_project(music_style: str = "", description: str = "",
                              cover_style: str = "", gender: str = "",
                              music_line: str = "", lyrics_lang: str = "") -> str:
-    """Fallback Styles khi API AI không dùng được — bám Thể loại + Dòng nhạc."""
+    """Fallback Styles khi API AI không dùng được — thẻ ngắn theo Thể loại.
+
+    `music_line` (thị trường) không còn đưa vào Styles: cụm «…-market polish»
+    mơ hồ với Suno; ngôn ngữ hát đã nằm trong thẻ «sung in …»."""
     from .genre_catalog import genre_prompt_core
-    from .music_line import line_profile
-    line = line_profile(music_line)
     core = genre_prompt_core(music_style, cover_style, description)
-    head, comma, rest = core.partition(",")
-    core = f"{head}, {line['prompt_modifier']}{comma}{rest}"
     return f"{core}, {lyrics_lock(gender, lyrics_lang)}"
 
 
@@ -766,6 +762,10 @@ class CoverDriver(SunoDriver):
             "button:has-text('More Options')",
             "button:text-is('Advanced Options')",
             "[role=button]:text-is('Advanced Options')",
+            # LIVE 2026-11-25: tiêu đề More Options là DIV thường (không phải
+            # button) có mũi tên và dòng phụ «Variety» → bấm đúng chữ tiêu đề.
+            "div:text-is('More Options')",
+            "span:text-is('More Options')",
         ]
         # Header này nằm trong panel Create có scroll riêng.  Playwright coi nó
         # là không visible khi bị mép panel cắt, nên query_first() không trả về
@@ -797,8 +797,19 @@ class CoverDriver(SunoDriver):
         except Exception as exc:
             self._log(f"Không bấm được More Options: {exc}")
             return
-        if not self.options_open():
-            self._log("Đã bấm More Options nhưng các thanh trượt chưa hiện.")
+        for _ in range(10):                 # khung mở có hiệu ứng trượt ~1 giây
+            # Thanh nằm dưới mép panel Create (có scroll riêng) bị options_open
+            # coi là bị cắt → cuộn Weirdness vào giữa panel rồi mới đo.
+            try:
+                self.page.evaluate("""() => { const e = document.querySelector(
+                  "[role=slider][aria-label='Weirdness']");
+                  if (e) e.scrollIntoView({block: 'center'}); }""")
+            except Exception:
+                pass
+            if self.options_open():
+                return
+            self._wait(300)
+        self._log("Đã bấm More Options nhưng các thanh trượt chưa hiện.")
 
     # ── form ─────────────────────────────────────────────────────
     def clear_form(self) -> None:
