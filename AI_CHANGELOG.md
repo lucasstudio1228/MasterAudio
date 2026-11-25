@@ -221,3 +221,30 @@
   - `npm run build` OK. Mở form New Project trên tool đang chạy, chọn Mix Set → thấy 3 lựa chọn, đóng form không tạo gì.
 - **Kết quả:** đã áp dụng cho tool chính, Cover Audio Tool (phần backend) và 2 repo (chưa push).
 - **Tồn đọng:** cần khởi động lại tool (khi không có job) để backend nhận code sửa thanh trượt. Giao diện mới đã có hiệu lực sau khi tải lại trang.
+
+## 2026-11-25 22:30 — Sửa lỗi «Styles AI lỗi: AI không giữ đúng thể loại đã chọn» (Ballad luôn rơi về prompt dự phòng)
+
+- **Yêu cầu:** "Suno vẫn lỗi. Kiểm tra backend và yêu cầu bạn giám sát để chuẩn hoá quy trình".
+- **Nguyên nhân:**
+  - Kiểm tra log: sau khi khởi động lại (20:24), phần Suno chạy hết (mở More Options, đặt đủ 4 thanh trượt, tải 2 bản, master xong lúc 22:08).
+  - Nhưng mỗi lần chạy, log đều ghi «Styles AI lỗi (ValueError: AI không giữ đúng thể loại đã chọn)». Chạy thử AI thật: AI trả đúng «Ballad, 68-82 BPM, … acoustic guitar …». Hàm kiểm tra `genre_key(styles)` dò cả chuỗi và ưu tiên từ dài nhất, nên chữ «acoustic» trong tên nhạc cụ «acoustic guitar» bị nhận là thể loại Acoustic. Bài Ballad nào cũng bị loại kết quả AI.
+- **File đã đổi:**
+  - `backend/cover/style_prompt.py` (tool chính, Cover Audio Tool, 2 repo): kiểm thể loại ở thẻ đầu tiên (chỗ AI ghi thể loại). Chỉ khi thẻ đầu không nhận ra thể loại mới dò cả chuỗi.
+  - `tests/test_cover_style_prompt.py` (tool chính, repo Music-Cover): thêm test Ballad có «acoustic guitar» vẫn dùng kết quả AI.
+  - Bản cũ cất ở `Trash/backup_truoc_sua_genre_check_20261125/`.
+- **Trước:** Ballad (và mọi thể loại có tên nhạc cụ trùng tên thể loại khác) luôn dùng prompt dự phòng cục bộ.
+- **Sau:** AI viết Styles. Chạy thật với AI: Ballad, Deep House, Bolero, R&B, Lofi, Pop đều có nguồn «ai», dài 179–235 ký tự, đúng thể loại, có thẻ giọng + «sung in Vietnamese» + «no instrumental solo».
+- **Kiểm thử:** unittest style/genre/music line/semi manual/audio only: OK (53 test). `test_suno_cover`: chỉ còn 11 lỗi cũ có từ trước.
+- **Kết quả:** đã áp dụng cho 4 bản (chưa push).
+- **Tồn đọng:** cần khởi động lại tool (khi không có job) để nhận code mới; Claude giám sát lượt chạy thật tiếp theo.
+
+## 2026-11-25 23:05 — Áp lại bản sửa thể loại Styles bị bản tự cập nhật ghi đè
+
+- **Yêu cầu:** "Chạy project khác" (giám sát lượt chạy project #37 «Tâm Sự Đời Tôi»).
+- **Nguyên nhân:** project #37 (Ballad) vẫn báo «Styles AI lỗi: AI không giữ đúng thể loại đã chọn» lúc 22:55. Lúc mở lại tool (22:54), `CoverNhacTool.exe` tự cập nhật code từ GitHub. Bản sửa lúc 22:30 chưa được đẩy lên GitHub nên bị ghi đè. Bản cũ được cất ở `_ban_cu_truoc_cap_nhat/20261125_225403/`.
+- **File đã đổi (chỉ tool chính):** `backend/cover/style_prompt.py` (lấy lại bản có `first_tag`), `tests/test_cover_style_prompt.py` (lấy lại test Ballad + acoustic guitar), cùng mục changelog 22:30. Bản trước khi áp lại cất ở `Trash/backup_truoc_ap_lai_genre_20261125/`.
+- **Trước:** tool chính đang chạy code GitHub, chưa có bản sửa thể loại.
+- **Sau:** file trên máy giống hệt repo Music-Cover (đã so sánh).
+- **Kiểm thử:** `unittest tests.test_cover_style_prompt`: 11 test OK.
+- **Kết quả:** code trên máy đã đúng. Backend đang chạy vẫn dùng code cũ cho tới lần mở lại tool sau.
+- **Tồn đọng:** phải đẩy bản sửa lên GitHub trước khi mở lại tool. Nếu chưa đẩy, `CoverNhacTool.exe` sẽ tự cập nhật và ghi đè lần nữa.

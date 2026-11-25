@@ -286,7 +286,11 @@ def generate_cover_styles(music_style: str, description: str = "",
         if not _valid_styles(styles):
             raise ValueError("prompt AI rỗng/quá dài hoặc không phù hợp vocal cover")
         selected_key = genre_key(music_style, cover_style, description)
-        if selected_key and genre_key(styles) != selected_key:
+        # LIVE 2026-11-25: đo thể loại ở THẺ ĐẦU (chỗ ghi thể loại). Đo cả chuỗi
+        # thì tên nhạc cụ «acoustic guitar» bị nhận nhầm là thể loại Acoustic →
+        # Ballad nào cũng bị loại.
+        first_tag = styles.split(",", 1)[0]
+        if selected_key and (genre_key(first_tag) or genre_key(styles)) != selected_key:
             raise ValueError("AI không giữ đúng thể loại đã chọn")
         # Chỉ genre người dùng chọn mới được cấp quyền xuất hiện. Dòng nhạc và
         # mô tả dự án không được vô tình bật thêm Latin/K-pop/bolero/... như
