@@ -200,3 +200,24 @@
   - Cần khởi động lại tool (khi không có job) để nhận code mới.
   - Bài cũ có Styles dài đã lưu sẽ tự viết lại khi chạy Suno, trừ chế độ «chỉ đổi Tempo».
   - Suno đang có banner «Black Friday Sale» ở đầu trang; tool không bấm vào nó.
+
+## 2026-11-25 14:45 — Sửa «auto chỉ audio» dừng ở Weirdness (form Cover) + thêm lựa chọn auto chỉ audio khi tạo project mới
+
+- **Yêu cầu:** "chức năng auto chỉ audio không sử dụng được. Kiểm tra lại ngay"; sau đó: "thêm chức năng chạy auto chỉ audio khi tạo project mới".
+- **Nguyên nhân:**
+  - Lần chạy auto chỉ audio lúc 14:09 (bài #178 «Sầu Tím Thiệp Hồng», project #34) đã dùng code mới (Styles 249 ký tự) nhưng vẫn dừng: «Đã bấm More Options nhưng các thanh trượt chưa hiện» → «Không đặt được 'Weirdness' = 10 (đang 50)».
+  - Kiểm tra trực tiếp form Cover của Suno: khung More Options đã MỞ sẵn, chỉ là thanh trượt nằm dưới mép panel Create. Panel cuộn kiểu «trượt mượt» nên tool đo ngay khi đang trượt, tưởng khung đóng, bấm tiêu đề và vô tình ĐÓNG khung lại.
+  - Tạo project mới: lựa chọn «chỉ audio» đã có nhưng bị giấu (phải chọn «Tạo & chạy tự động» mới hiện, mặc định lại là audio + video).
+- **File đã đổi:**
+  - `backend/cover/suno_cover.py` (tool chính, Cover Audio Tool, 2 repo): `ensure_more_options` cuộn Weirdness vào giữa panel bằng cuộn tức thì và đo lại tối đa 4 lần trước khi bấm. Lỗi cuộn tiêu đề không còn làm hủy cú bấm. Bấm xong mà chưa thấy thanh trượt thì bấm lại tiêu đề 1 lần. Thêm hàm `_scroll_weirdness_into_view`.
+  - `tests/test_suno_cover.py`: đếm số lần `page.evaluate` từ 3 lên 4 (thêm bước cuộn).
+  - `frontend/src/components/projects/ProjectFormModal.tsx` + `frontend/dist` (tool chính, repo Music-Cover): khi tạo Mix Set/Track lẻ có 3 lựa chọn hiện thẳng: «Chỉ tạo, tôi tự chạy», «🎧 Tạo & chạy auto chỉ audio», «🚀 Tạo & chạy auto audio + video». Bỏ khối «Kiểu chạy auto» bị giấu. Cover Audio Tool vốn chỉ làm audio nên không đổi giao diện.
+  - Bản cũ cất ở `Trash/backup_truoc_sua_more_options_cover_20261125/`.
+- **Trước:** auto chỉ audio dừng cả hàng đợi ở bước thanh trượt; muốn tạo project chạy chỉ audio phải mở thêm ô ẩn.
+- **Sau:** tool đặt được Weirdness=10, Style Influence=70, Variety=0 trên form Cover mà không bấm nhầm. Form New Project có sẵn «Tạo & chạy auto chỉ audio» (nút đổi thành «Tạo & chạy Mix Set (chỉ audio)»), gửi `audio_only=true` như cũ.
+- **Kiểm thử:**
+  - Chạy thật trên trang Suno Cover (remix bài 07bf471e…) bằng profile của tool, chỉ chỉnh thanh trượt, không bấm Create: đặt đúng 3 thanh.
+  - unittest `test_suno_semi_manual`, `test_audio_only_mode`, `test_cover_style_prompt`: OK. `test_suno_cover`: chỉ còn 11 lỗi cũ có từ trước (FakeDriver thiếu `manual_editor`).
+  - `npm run build` OK. Mở form New Project trên tool đang chạy, chọn Mix Set → thấy 3 lựa chọn, đóng form không tạo gì.
+- **Kết quả:** đã áp dụng cho tool chính, Cover Audio Tool (phần backend) và 2 repo (chưa push).
+- **Tồn đọng:** cần khởi động lại tool (khi không có job) để backend nhận code sửa thanh trượt. Giao diện mới đã có hiệu lực sau khi tải lại trang.

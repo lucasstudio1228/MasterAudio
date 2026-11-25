@@ -754,8 +754,14 @@ class CoverDriver(SunoDriver):
 
     def ensure_more_options(self) -> None:
         """Mở More Options nếu đang đóng (bấm khi đang mở sẽ ĐÓNG lại)."""
-        if self.options_open():
-            return
+        # LIVE 2026-11-25 (form Cover): khung đã MỞ sẵn nhưng thanh trượt nằm
+        # dưới mép panel Create → options_open() báo «bị cắt», tool bấm tiêu đề
+        # và vô tình ĐÓNG khung. Cuộn Weirdness vào giữa panel rồi mới đo.
+        for _ in range(4):                  # panel cuộn «mượt» → đo lại vài lần
+            self._scroll_weirdness_into_view()
+            if self.options_open():
+                return
+            self._wait(300)
         selectors = [
             "button:text-is('More Options')",
             "[role=button]:text-is('More Options')",
@@ -791,25 +797,35 @@ class CoverDriver(SunoDriver):
         if loc is None:
             self._log("Không thấy nút More Options rõ ràng.")
             return
-        try:
-            self._click(loc)
-            self._wait(900)
-        except Exception as exc:
-            self._log(f"Không bấm được More Options: {exc}")
-            return
-        for _ in range(10):                 # khung mở có hiệu ứng trượt ~1 giây
-            # Thanh nằm dưới mép panel Create (có scroll riêng) bị options_open
-            # coi là bị cắt → cuộn Weirdness vào giữa panel rồi mới đo.
+        for attempt in (1, 2):              # lần 2: lỡ bấm làm khung ĐÓNG → bấm lại
             try:
-                self.page.evaluate("""() => { const e = document.querySelector(
-                  "[role=slider][aria-label='Weirdness']");
-                  if (e) e.scrollIntoView({block: 'center'}); }""")
+                loc.scroll_into_view_if_needed(timeout=3000)
             except Exception:
-                pass
-            if self.options_open():
+                pass                        # panel còn đang trượt — vẫn thử bấm
+            try:
+                self._click(loc)
+                self._wait(900)
+            except Exception as exc:
+                self._log(f"Không bấm được More Options: {exc}")
                 return
-            self._wait(300)
+            for _ in range(10):             # khung mở có hiệu ứng trượt ~1 giây
+                self._scroll_weirdness_into_view()
+                if self.options_open():
+                    return
+                self._wait(300)
+            if attempt == 1:
+                self._log("More Options chưa hiện thanh trượt — bấm lại tiêu đề lần nữa.")
         self._log("Đã bấm More Options nhưng các thanh trượt chưa hiện.")
+
+    def _scroll_weirdness_into_view(self) -> None:
+        """Thanh nằm dưới mép panel Create (có scroll riêng) bị options_open coi
+        là bị cắt → cuộn Weirdness vào giữa panel trước khi đo."""
+        try:
+            self.page.evaluate("""() => { const e = document.querySelector(
+              "[role=slider][aria-label='Weirdness']");
+              if (e) e.scrollIntoView({block: 'center', behavior: 'instant'}); }""")
+        except Exception:
+            pass
 
     # ── form ─────────────────────────────────────────────────────
     def clear_form(self) -> None:
